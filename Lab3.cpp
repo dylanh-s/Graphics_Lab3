@@ -14,10 +14,12 @@ using namespace glm;
 
 #define WIDTH 500
 #define HEIGHT 500
-#define FOCAL_LENGTH 250
-// viewpoint = (0,0,0)
-// image plane center = (0,0,FOCAL_LENGTH)
-#define OBJ_SCALE 100
+#define STEP 1
+float FOCAL_LENGTH = HEIGHT / 2;
+vec3 CAMERA_POS(0, 4, 5);
+mat3x3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
+#define OBJ_SCALE 1000
+#define OBJ_SHIFT 100
 
 class ObjContent
 {
@@ -44,9 +46,11 @@ void drawLine(CanvasPoint start, CanvasPoint end, Colour colour);
 void drawObj(ObjContent content);
 void handleEvent(SDL_Event event);
 void draw3DTriangle(ModelTriangle tri, ObjContent cont);
+void drawFullTriangle(CanvasTriangle tri);
 float *interpolate(double from, double to, int numberOfValues);
 vec3 *interpolate(vec3 from, vec3 to, int numberOfValues);
 void drawStrokedTriangle(CanvasTriangle tri);
+CanvasTriangle getRandomTriangle();
 ObjContent objFileRead(string filename);
 ObjContent populatePalette(string filename);
 
@@ -64,6 +68,7 @@ int main(int argc, char *argv[])
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
+		// drawFullTriangle(getRandomTriangle());
 		drawObj(content);
 		draw();
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
@@ -192,21 +197,21 @@ CanvasTriangle *SplitTriangle(CanvasTriangle tri)
 	float currentY = tri.vertices[2].y;
 	float count = 0.0;
 	float x = 0.0;
-	printf("%f, %f, %f \n", tri.vertices[0].y, tri.vertices[1].y, tri.vertices[2].y);
+	// printf("%f, %f, %f \n", tri.vertices[0].y, tri.vertices[1].y, tri.vertices[2].y);
 	while (currentY >= tri.vertices[1].y)
 	{
 		currentY = tri.vertices[2].y + (yStepSize * count);
 		x = tri.vertices[2].x + (xStepSize * count);
 		count++;
 	}
-	printf("pixel at (%f,%f). mid vertex is at (%f,%f).\n", round(x), round(tri.vertices[1].y), tri.vertices[1].x, tri.vertices[1].y);
+	// printf("pixel at (%f,%f). mid vertex is at (%f,%f).\n", round(x), round(tri.vertices[1].y), tri.vertices[1].x, tri.vertices[1].y);
 	// window.setPixelColour(round(x), round(tri.vertices[1].y), vec3ToColour(vec3(255, 255, 255)));
 	CanvasPoint rastPoint = CanvasPoint(round(x), tri.vertices[1].y);
 	// window.setPixelColour(round(x - 1), round(currentY), vec3ToColour(vec3(255, 255, 255)));
 	// window.setPixelColour(round(x + 1), round(currentY), vec3ToColour(vec3(255, 255, 255)));
 	// drawLine(CanvasPoint(0, round(tri.vertices[1].y)), CanvasPoint(window.width, round(tri.vertices[1].y)), Colour(255, 255, 255));
-	printf("0: %f,  1: %f, 2: %f\n", tri.vertices[0].y, tri.vertices[1].y, rastPoint.y);
-	printf("0: %f,  1: %f, 2: %f\n", tri.vertices[1].y, rastPoint.y, tri.vertices[2].y);
+	// printf("0: %f,  1: %f, 2: %f\n", tri.vertices[0].y, tri.vertices[1].y, rastPoint.y);
+	// printf("0: %f,  1: %f, 2: %f\n", tri.vertices[1].y, rastPoint.y, tri.vertices[2].y);
 	toReturn[0] = CanvasTriangle(tri.vertices[0], tri.vertices[1], rastPoint);
 	toReturn[1] = CanvasTriangle(tri.vertices[2], rastPoint, tri.vertices[1]);
 
@@ -221,22 +226,6 @@ void draw()
 void drawObj(ObjContent content)
 {
 
-	for (int i = 0; i < content.faces.size(); i++)
-	{
-		for (int j = 0; j < 3; j++)
-		{
-			ModelTriangle tri = content.faces[i];
-			CanvasPoint A = CanvasPoint((tri.vertices[j].x / tri.vertices[j].z) * FOCAL_LENGTH, (tri.vertices[j].y / tri.vertices[j].z) * FOCAL_LENGTH, 1);
-			if (fabs(A.x) > content.max)
-			{
-				content.max = A.x;
-			}
-			else if (fabs(A.y) > content.max)
-			{
-				content.max = A.y;
-			}
-		}
-	}
 	int c = 0;
 	for (int i = 0; i < content.faces.size(); i++)
 	{
@@ -251,9 +240,26 @@ void drawLine(CanvasPoint start, CanvasPoint end, Colour colour)
 {
 	// printf("line from (%f,%f) to (%f,%f)\n", start.x, start.y, end.x, end.y);
 	// window.clearPixels();
+	if (start.x > WIDTH)
+	{
+		start.x = WIDTH;
+	}
+	if (start.y > HEIGHT)
+	{
+		start.y = HEIGHT;
+	}
+	if (end.x > WIDTH)
+	{
+		end.x = WIDTH;
+	}
+	if (end.y > HEIGHT)
+	{
+		end.y = HEIGHT;
+	}
 	float xDiff = start.x - end.x;
 	float yDiff = start.y - end.y;
 	float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
+	// printf("calculated steps:  %f\n", numberOfSteps);
 	float xStepSize = xDiff / numberOfSteps;
 	float yStepSize = yDiff / numberOfSteps;
 	for (float i = 0.0; i < numberOfSteps; i++)
@@ -273,7 +279,9 @@ void drawStrokedTriangle(CanvasTriangle tri)
 
 float getXPoint(CanvasPoint from, CanvasPoint to, int y)
 {
-	return (from.x + (y - from.y) / (to.y - from.y) * (to.x - from.x));
+	float x_2 = (from.x + (y - from.y) / (to.y - from.y) * (to.x - from.x));
+
+	return x_2;
 }
 
 void drawFullTriangle(CanvasTriangle tri)
@@ -285,6 +293,7 @@ void drawFullTriangle(CanvasTriangle tri)
 		float xDiff = tris[t].vertices[0].x - tris[t].vertices[1].x;
 		float yDiff = tris[t].vertices[0].y - tris[t].vertices[1].y;
 		float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
+		// printf("number of steps = %f\n", numberOfSteps);
 		float xStepSize = xDiff / numberOfSteps;
 		float yStepSize = yDiff / numberOfSteps;
 
@@ -298,7 +307,10 @@ void drawFullTriangle(CanvasTriangle tri)
 			//find corresponding point on [0][2] to current x,y
 			float x_2 = getXPoint(CanvasPoint(tris[t].vertices[0]), CanvasPoint(tris[t].vertices[2]), y);
 
-			drawLine(CanvasPoint(round(x), y), CanvasPoint(round(x_2), y), tri.colour);
+			if (x_2 <= WIDTH && x_2 >= 0)
+			{
+				drawLine(CanvasPoint(round(x), y), CanvasPoint(round(x_2), y), tri.colour);
+			}
 		}
 		// drawStrokedTriangle(tris[t]);
 	}
@@ -317,36 +329,35 @@ CanvasPoint toImageCoords(CanvasPoint p)
 
 CanvasPoint project3DPoint(vec3 p)
 {
-	CanvasPoint A = CanvasPoint((p.x / p.z) * FOCAL_LENGTH, (p.y / p.z) * FOCAL_LENGTH, FOCAL_LENGTH);
+	p = ((p - CAMERA_POS)) * CAMERA_ROT;
+	CanvasPoint A;
+	if (!(p.z == 0))
+	{
+		A = CanvasPoint((p.x / p.z) * FOCAL_LENGTH, (p.y / p.z) * FOCAL_LENGTH, FOCAL_LENGTH);
+	}
+	else
+	{
+		printf("a");
+		A = CanvasPoint(0, 0, 0);
+	}
 	return A;
 }
 
 void draw3DTriangle(ModelTriangle tri, ObjContent cont)
 {
-
-	printf("triangle:\n");
-	printf("A=%f,%f,%f\n", tri.vertices[0].x, tri.vertices[0].y, tri.vertices[0].z);
-	printf("B=%f,%f,%f\n", tri.vertices[1].x, tri.vertices[1].y, tri.vertices[1].z);
-	printf("C=%f,%f,%f\n\n", tri.vertices[2].x, tri.vertices[2].y, tri.vertices[2].z);
-
+	// project each point to camera space
+	// alex please read  https://www.scratchapixel.com/lessons/3d-basic-rendering/computing-pixel-coordinates-of-3d-point/mathematics-computing-2d-coordinates-of-3d-points
+	// as it explains how i got it working, sorry its bare long but it fully helped me get it
+	// basically the lectures weren't very helpful
 	CanvasPoint A = project3DPoint(tri.vertices[0]);
 	CanvasPoint B = project3DPoint(tri.vertices[1]);
 	CanvasPoint C = project3DPoint(tri.vertices[2]);
-	printf("projected:\n");
-	printf("A=%f,%f\n", A.x, A.y);
-	printf("B=%f,%f\n", B.x, B.y);
-	printf("C=%f,%f\n\n", C.x, C.y);
-	// printf("B=%f,%f\n", B.x, B.y);
-	// printf("C=%f,%f\n", C.x, C.y);
-	printf("projected and translated to (0,0):\n");
+	//shift coords to center of window
 	A = toImageCoords(A);
 	B = toImageCoords(B);
 	C = toImageCoords(C);
-	printf("A=%f,%f\n", A.x, A.y);
-	printf("B=%f,%f\n", B.x, B.y);
-	printf("C=%f,%f\n\n", C.x, C.y);
-	printf("--------------\n");
-	drawStrokedTriangle(CanvasTriangle(A, B, C, tri.colour));
+	// drawStrokedTriangle(CanvasTriangle(A, B, C, tri.colour));
+	drawFullTriangle(CanvasTriangle(A, B, C, tri.colour));
 }
 
 void imageread(string filename)
@@ -432,8 +443,8 @@ ObjContent objFileRead(string filename)
 				C--;
 				// printf("tri A at %f,%f,%f\n", vertices.at(A).x, vertices.at(A).y, vertices.at(A).z);
 				ModelTriangle t = ModelTriangle(vertices.at(A), vertices.at(B), vertices.at(C), currentCol);
-				ModelTriangle scaled_t = scaleTriangle(t);
-				toReturn.addFace(scaled_t);
+				// ModelTriangle scaled_t = scaleTriangle(t);
+				toReturn.addFace(t);
 			}
 		}
 	}
@@ -474,6 +485,36 @@ void handleEvent(SDL_Event event)
 		else if (event.key.keysym.sym == SDLK_i)
 		{
 			imageread("");
+		}
+		else if (event.key.keysym.sym == SDLK_s)
+		{
+			window.clearPixels();
+			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y, CAMERA_POS.z + STEP);
+		}
+		else if (event.key.keysym.sym == SDLK_w)
+		{
+			window.clearPixels();
+			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y, CAMERA_POS.z - STEP);
+		}
+		else if (event.key.keysym.sym == SDLK_q)
+		{
+			window.clearPixels();
+			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y + STEP, CAMERA_POS.z);
+		}
+		else if (event.key.keysym.sym == SDLK_e)
+		{
+			window.clearPixels();
+			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y - STEP, CAMERA_POS.z);
+		}
+		else if (event.key.keysym.sym == SDLK_a)
+		{
+			window.clearPixels();
+			CAMERA_POS = vec3(CAMERA_POS.x + STEP, CAMERA_POS.y, CAMERA_POS.z);
+		}
+		else if (event.key.keysym.sym == SDLK_d)
+		{
+			window.clearPixels();
+			CAMERA_POS = vec3(CAMERA_POS.x - STEP, CAMERA_POS.y, CAMERA_POS.z);
 		}
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
