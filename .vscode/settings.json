@@ -74,6 +74,13 @@
 		"utility": "cpp",
 		"hash_map": "cpp",
 		"memory_resource": "cpp",
-		"cinttypes": "cpp"
+		"cinttypes": "cpp",
+		"csignal": "cpp",
+		"strstream": "cpp",
+		"list": "cpp",
+		"cfenv": "cpp",
+		"hashtable": "cpp",
+		"valarray": "cpp",
+		"typeindex": "cpp"
 	}
 }

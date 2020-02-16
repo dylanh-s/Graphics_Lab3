@@ -46,7 +46,7 @@ void drawLine(CanvasPoint start, CanvasPoint end, Colour colour);
 void drawObj(ObjContent content);
 void handleEvent(SDL_Event event);
 void draw3DTriangle(ModelTriangle tri, ObjContent cont);
-void drawFullTriangle(CanvasTriangle tri);
+void drawFilledTriangle(CanvasTriangle tri);
 float *interpolate(double from, double to, int numberOfValues);
 vec3 *interpolate(vec3 from, vec3 to, int numberOfValues);
 void drawStrokedTriangle(CanvasTriangle tri);
@@ -68,7 +68,7 @@ int main(int argc, char *argv[])
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
-		// drawFullTriangle(getRandomTriangle());
+		// drawFilledTriangle(getRandomTriangle());
 		drawObj(content);
 		draw();
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
@@ -168,54 +168,6 @@ ModelTriangle scaleTriangle(ModelTriangle t)
 		toReturn.vertices[i] = vec3(X_new, Y_new, Z_new);
 	}
 	return toReturn;
-};
-
-CanvasTriangle *SplitTriangle(CanvasTriangle tri)
-{
-	CanvasTriangle *toReturn = new CanvasTriangle[2];
-	CanvasPoint top;
-	CanvasPoint mid;
-	CanvasPoint bot;
-	// swaps so [0] is always top, [1] middle, [2] bottom
-	if (tri.vertices[1].y < tri.vertices[0].y)
-	{
-		swap(tri.vertices[0], tri.vertices[1]);
-	}
-	if (tri.vertices[2].y < tri.vertices[1].y)
-	{
-		swap(tri.vertices[2], tri.vertices[1]);
-	}
-	if (tri.vertices[1].y < tri.vertices[0].y)
-	{
-		swap(tri.vertices[1], tri.vertices[0]);
-	}
-	float xDiff = tri.vertices[0].x - tri.vertices[2].x;
-	float yDiff = tri.vertices[0].y - tri.vertices[2].y;
-	float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
-	float xStepSize = xDiff / numberOfSteps;
-	float yStepSize = yDiff / numberOfSteps;
-	float currentY = tri.vertices[2].y;
-	float count = 0.0;
-	float x = 0.0;
-	// printf("%f, %f, %f \n", tri.vertices[0].y, tri.vertices[1].y, tri.vertices[2].y);
-	while (currentY >= tri.vertices[1].y)
-	{
-		currentY = tri.vertices[2].y + (yStepSize * count);
-		x = tri.vertices[2].x + (xStepSize * count);
-		count++;
-	}
-	// printf("pixel at (%f,%f). mid vertex is at (%f,%f).\n", round(x), round(tri.vertices[1].y), tri.vertices[1].x, tri.vertices[1].y);
-	// window.setPixelColour(round(x), round(tri.vertices[1].y), vec3ToColour(vec3(255, 255, 255)));
-	CanvasPoint rastPoint = CanvasPoint(round(x), tri.vertices[1].y);
-	// window.setPixelColour(round(x - 1), round(currentY), vec3ToColour(vec3(255, 255, 255)));
-	// window.setPixelColour(round(x + 1), round(currentY), vec3ToColour(vec3(255, 255, 255)));
-	// drawLine(CanvasPoint(0, round(tri.vertices[1].y)), CanvasPoint(window.width, round(tri.vertices[1].y)), Colour(255, 255, 255));
-	// printf("0: %f,  1: %f, 2: %f\n", tri.vertices[0].y, tri.vertices[1].y, rastPoint.y);
-	// printf("0: %f,  1: %f, 2: %f\n", tri.vertices[1].y, rastPoint.y, tri.vertices[2].y);
-	toReturn[0] = CanvasTriangle(tri.vertices[0], tri.vertices[1], rastPoint);
-	toReturn[1] = CanvasTriangle(tri.vertices[2], rastPoint, tri.vertices[1]);
-
-	return toReturn;
 }
 
 void draw()
@@ -223,23 +175,26 @@ void draw()
 	// drawLine(CanvasPoint(0, window.height / 2), CanvasPoint(window.width, window.height / 2), Colour(255, 255, 255));
 }
 
-void drawObj(ObjContent content)
-{
-
-	int c = 0;
-	for (int i = 0; i < content.faces.size(); i++)
-	{
-		// printf("drawing triangle %i\n", i);
-		draw3DTriangle(content.faces.at(i), content);
-		c = i;
-	}
-	// printf("%i triangles drawn!", c);
-}
-
 void drawLine(CanvasPoint start, CanvasPoint end, Colour colour)
 {
 	// printf("line from (%f,%f) to (%f,%f)\n", start.x, start.y, end.x, end.y);
 	// window.clearPixels();
+	if (start.x < 0)
+	{
+		start.x = 0;
+	}
+	if (start.y < 0)
+	{
+		start.y = 0;
+	}
+	if (end.x < 0)
+	{
+		end.x = 0;
+	}
+	if (end.y < 0)
+	{
+		end.y = 0;
+	}
 	if (start.x > WIDTH)
 	{
 		start.x = WIDTH;
@@ -266,7 +221,7 @@ void drawLine(CanvasPoint start, CanvasPoint end, Colour colour)
 	{
 		float x = end.x + (xStepSize * i);
 		float y = end.y + (yStepSize * i);
-		window.setPixelColour(round(x), round(y), colour.toInt32());
+		window.setPixelColour(round(x), round(y), colour.packed());
 	}
 }
 
@@ -279,12 +234,51 @@ void drawStrokedTriangle(CanvasTriangle tri)
 
 float getXPoint(CanvasPoint from, CanvasPoint to, int y)
 {
-	float x_2 = (from.x + (y - from.y) / (to.y - from.y) * (to.x - from.x));
+	float xp = (from.x + ((y - from.y) / (to.y - from.y)) * (to.x - from.x));
 
-	return x_2;
+	return xp;
 }
 
-void drawFullTriangle(CanvasTriangle tri)
+CanvasTriangle *SplitTriangle(CanvasTriangle tri)
+{
+	CanvasTriangle *tris = new CanvasTriangle[2];
+	// swaps so [0] is always top, [1] middle, [2] bottom
+	if (tri.vertices[1].y < tri.vertices[0].y)
+	{
+		swap(tri.vertices[0], tri.vertices[1]);
+	}
+	if (tri.vertices[2].y < tri.vertices[1].y)
+	{
+		swap(tri.vertices[2], tri.vertices[1]);
+	}
+	if (tri.vertices[1].y < tri.vertices[0].y)
+	{
+		swap(tri.vertices[1], tri.vertices[0]);
+	}
+	float xDiff = tri.vertices[0].x - tri.vertices[2].x;
+	float yDiff = tri.vertices[0].y - tri.vertices[2].y;
+	float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
+	float xStepSize = xDiff / numberOfSteps;
+	float yStepSize = yDiff / numberOfSteps;
+	float y = tri.vertices[2].y;
+	float x = 0.0;
+	float i = 0.0;
+	// printf("%f, %f, %f \n", tri.vertices[0].y, tri.vertices[1].y, tri.vertices[2].y);
+	while (y >= tri.vertices[1].y)
+	{
+		y = tri.vertices[2].y + (yStepSize * i);
+		x = tri.vertices[2].x + (xStepSize * i);
+		i++;
+	}
+
+	CanvasPoint splitPoint = CanvasPoint(round(x), tri.vertices[1].y);
+	tris[0] = CanvasTriangle(tri.vertices[0], tri.vertices[1], splitPoint);
+	tris[1] = CanvasTriangle(tri.vertices[2], splitPoint, tri.vertices[1]);
+
+	return tris;
+}
+
+void drawFilledTriangle(CanvasTriangle tri)
 {
 	CanvasTriangle *tris = SplitTriangle(tri);
 	tris[1].colour = Colour(255, 0, 0);
@@ -297,19 +291,19 @@ void drawFullTriangle(CanvasTriangle tri)
 		float xStepSize = xDiff / numberOfSteps;
 		float yStepSize = yDiff / numberOfSteps;
 
-		float y;
 		float x;
+		float y;
 
 		for (float i = 0.0; i < numberOfSteps; i++)
 		{
 			x = tris[t].vertices[1].x + (xStepSize * i);
 			y = tris[t].vertices[1].y + (yStepSize * i);
 			//find corresponding point on [0][2] to current x,y
-			float x_2 = getXPoint(CanvasPoint(tris[t].vertices[0]), CanvasPoint(tris[t].vertices[2]), y);
+			float xp = getXPoint(CanvasPoint(tris[t].vertices[0]), CanvasPoint(tris[t].vertices[2]), y);
 
-			if (x_2 <= WIDTH && x_2 >= 0)
+			if (xp <= WIDTH && xp >= 0) //Should be able to remove due to checks in draw line, but behaves strangely if done
 			{
-				drawLine(CanvasPoint(round(x), y), CanvasPoint(round(x_2), y), tri.colour);
+				drawLine(CanvasPoint(round(x), y), CanvasPoint(round(xp), y), tri.colour);
 			}
 		}
 		// drawStrokedTriangle(tris[t]);
@@ -318,13 +312,25 @@ void drawFullTriangle(CanvasTriangle tri)
 	delete[] tris;
 }
 
+void drawObj(ObjContent content)
+{
+	int c = 0;
+	for (int i = 0; i < content.faces.size(); i++)
+	{
+		// printf("drawing triangle %i\n", i);
+		draw3DTriangle(content.faces.at(i), content);
+		c = i;
+	}
+	// printf("%i triangles drawn!", c);
+}
+
 CanvasPoint toImageCoords(CanvasPoint p)
 {
 	int w = window.width / 2;
 	int h = window.height / 2;
-	float x_prime = w + (p.x);
-	float y_prime = h + (p.y);
-	return CanvasPoint(x_prime, y_prime);
+	float xp = w + (p.x);
+	float yp = h + (p.y);
+	return CanvasPoint(xp, yp);
 }
 
 CanvasPoint project3DPoint(vec3 p)
@@ -346,9 +352,7 @@ CanvasPoint project3DPoint(vec3 p)
 void draw3DTriangle(ModelTriangle tri, ObjContent cont)
 {
 	// project each point to camera space
-	// alex please read  https://www.scratchapixel.com/lessons/3d-basic-rendering/computing-pixel-coordinates-of-3d-point/mathematics-computing-2d-coordinates-of-3d-points
-	// as it explains how i got it working, sorry its bare long but it fully helped me get it
-	// basically the lectures weren't very helpful
+	// https://www.scratchapixel.com/lessons/3d-basic-rendering/computing-pixel-coordinates-of-3d-point/mathematics-computing-2d-coordinates-of-3d-points
 	CanvasPoint A = project3DPoint(tri.vertices[0]);
 	CanvasPoint B = project3DPoint(tri.vertices[1]);
 	CanvasPoint C = project3DPoint(tri.vertices[2]);
@@ -357,10 +361,10 @@ void draw3DTriangle(ModelTriangle tri, ObjContent cont)
 	B = toImageCoords(B);
 	C = toImageCoords(C);
 	// drawStrokedTriangle(CanvasTriangle(A, B, C, tri.colour));
-	drawFullTriangle(CanvasTriangle(A, B, C, tri.colour));
+	drawFilledTriangle(CanvasTriangle(A, B, C, tri.colour));
 }
 
-void imageread(string filename)
+void ppmFileRead(string filename)
 {
 }
 
@@ -484,7 +488,7 @@ void handleEvent(SDL_Event event)
 		}
 		else if (event.key.keysym.sym == SDLK_i)
 		{
-			imageread("");
+			ppmFileRead("");
 		}
 		else if (event.key.keysym.sym == SDLK_s)
 		{

@@ -28,7 +28,7 @@ public:
     blue = b;
   }
 
-  uint32_t toInt32()
+  uint32_t packed()
   {
     uint32_t colour = (255 << 24) + (int(red) << 16) + (int(green) << 8) + int(blue);
     return colour;
