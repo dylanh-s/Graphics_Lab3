@@ -20,6 +20,20 @@ vec3 CAMERA_POS(0, 4, 5);
 mat3x3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 #define OBJ_SCALE 1000
 #define OBJ_SHIFT 100
+/*
+cos(Y)*cos(Z), -cos(X)*sin(Z) + sin(X)*sin(Y)*cos(Z),  sin(X)*sin(Z) + cos(X)*sin(Y)*cos(Z), pos.x,
+cos(Y)*sin(Z),  cos(X)*cos(Z) + sin(X)*sin(Y)*sin(Z), -sin(X)*cos(Z) + cos(X)*sin(Y)*sin(Z), pos.y,
+-sin(Y)      ,  sin(X)*cos(Y)                       ,  cos(X)*cos(Y)                       , pos.z,
+0.0f         ,  0.0f                                ,  0.0f                                , 1.0f
+*/
+class PpmContent
+{
+public:
+	PpmContent() {}
+	std::vector<vector<uint32_t>> image;
+	int col = 0;
+	int row = 0;
+};
 
 class ObjContent
 {
@@ -53,13 +67,14 @@ void drawStrokedTriangle(CanvasTriangle tri);
 CanvasTriangle getRandomTriangle();
 ObjContent objFileRead(string filename);
 ObjContent populatePalette(string filename);
+PpmContent ppmFileRead(string filename);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
-
+	PpmContent ppm = ppmFileRead("texture.ppm");
 	ObjContent content = objFileRead("cornell-box.obj");
 
 	while (true)
@@ -221,7 +236,7 @@ void drawLine(CanvasPoint start, CanvasPoint end, Colour colour)
 	{
 		float x = end.x + (xStepSize * i);
 		float y = end.y + (yStepSize * i);
-		window.setPixelColour(round(x), round(y), colour.packed());
+		window.setPixelColour(round(x), round(y), colour.pack());
 	}
 }
 
@@ -270,7 +285,9 @@ CanvasTriangle *SplitTriangle(CanvasTriangle tri)
 		x = tri.vertices[2].x + (xStepSize * i);
 		i++;
 	}
-
+	//getXPoint not accurate and results in wonky lines
+	//float xp = getXPoint(tri.vertices[0], tri.vertices[2], tri.vertices[1].y);
+	//printf("%f, %f \n", x, xp);
 	CanvasPoint splitPoint = CanvasPoint(round(x), tri.vertices[1].y);
 	tris[0] = CanvasTriangle(tri.vertices[0], tri.vertices[1], splitPoint);
 	tris[1] = CanvasTriangle(tri.vertices[2], splitPoint, tri.vertices[1]);
@@ -364,13 +381,53 @@ void draw3DTriangle(ModelTriangle tri, ObjContent cont)
 	drawFilledTriangle(CanvasTriangle(A, B, C, tri.colour));
 }
 
-void ppmFileRead(string filename)
+PpmContent ppmFileRead(string filename)
 {
+	char red;
+	char green;
+	char blue;
+	string line;
+	PpmContent ppm;
+	std::ifstream in(filename, std::ios::in);
+	if (!in)
+	{
+		std::cerr << "Cannot open " << filename << std::endl;
+		exit(1);
+	}
+	std::getline(in, line);
+	// std::cout << line << std::endl;
+	std::getline(in, line);
+	// std::cout << line << std::endl;
+	in >> line;
+	ppm.col = std::stoi(line);
+	// std::cout << line << std::endl;
+	in >> line;
+	ppm.row = std::stoi(line);
+	// std::cout << line << std::endl;
+	in >> line;
+	// std::cout << line << std::endl;
+
+	for (int i = 0; i < ppm.row; i++){
+		vector<uint32_t> row;
+		for (int j = 0; j < ppm.col; j++){
+			uint32_t pixel;
+			for (int k = 0; k < 3; k++){
+				in >> red;
+				in >> green;
+				in >> blue;
+				pixel = (255 << 24) + (red << 16) + (green << 8) + blue;
+			}
+			row.push_back(pixel);
+		}
+		ppm.image.push_back(row);
+	}
+
+	return ppm;
 }
 
 ObjContent populatePalette(string filename)
 {
-	ObjContent content = ObjContent();
+	ObjContent content;
 	ofstream myfile;
 	string line;
 	Colour currentCol = Colour(0, 0, 0);
@@ -403,6 +460,7 @@ ObjContent populatePalette(string filename)
 	}
 	return content;
 }
+
 ObjContent objFileRead(string filename)
 {
 	ObjContent toReturn = populatePalette("cornell-box.mtl");
@@ -425,7 +483,7 @@ ObjContent objFileRead(string filename)
 			{
 				string *stuff = split(line, ' ');
 				string key = stuff[1];
-				std::cout << key << std::endl;
+				//std::cout << key << std::endl;
 				currentCol = toReturn.palette[key];
 			}
 			else if (line.substr(0, 2) == "v ")
@@ -522,5 +580,8 @@ void handleEvent(SDL_Event event)
 		}
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
+	{
 		cout << "MOUSE CLICKED" << endl;
+		drawFilledTriangle(getRandomTriangle());
+	}
 }
