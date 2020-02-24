@@ -13,14 +13,18 @@ private:
 public:
   int height;
   int width;
+  float *depthBuffer;
 
   // Constructor method
+
   DrawingWindow();
   DrawingWindow(int w, int h, bool fullscreen);
   void destroy();
   void renderFrame();
   bool pollForInputEvents(SDL_Event *event);
-  void setPixelColour(int x, int y, uint32_t colour);
+  void setPixelColour(int x, int y, float depth, uint32_t colour);
+  void setPixelDepth(int x, int y, float depth);
+  float getPixelDepth(int x, int y);
   uint32_t getPixelColour(int x, int y);
   void clearPixels();
 

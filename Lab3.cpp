@@ -15,9 +15,11 @@ using namespace glm;
 #define WIDTH 500
 #define HEIGHT 500
 #define STEP 1
-float FOCAL_LENGTH = HEIGHT / 2;
+float FOCAL_LENGTH = 250;
 vec3 CAMERA_POS(0, 4, 5);
-mat3x3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
+mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
+bool stroked = false;
+#define THETA 0.02
 #define OBJ_SCALE 1000
 #define OBJ_SHIFT 100
 /*
@@ -61,8 +63,8 @@ void drawObj(ObjContent content);
 void handleEvent(SDL_Event event);
 void draw3DTriangle(ModelTriangle tri, ObjContent cont);
 void drawFilledTriangle(CanvasTriangle tri);
-float *interpolate(double from, double to, int numberOfValues);
-vec3 *interpolate(vec3 from, vec3 to, int numberOfValues);
+vector<double> interpolate(double from, double to, int numberOfValues);
+vector<vec3> interpolate3d(vec3 from, vec3 to, int numberOfValues);
 void drawStrokedTriangle(CanvasTriangle tri);
 CanvasTriangle getRandomTriangle();
 ObjContent objFileRead(string filename);
@@ -85,49 +87,51 @@ int main(int argc, char *argv[])
 		update();
 		// drawFilledTriangle(getRandomTriangle());
 		drawObj(content);
-		draw();
+		// draw();
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
 	}
 }
 
-float *interpolate(double from, double to, int numberOfValues)
+vector<double> interpolate(double from, double to, int numberOfValues)
 {
-	float *toReturn = new float[numberOfValues];
+	vector<double> v;
 
-	float inc = (to - from) / (numberOfValues - 1);
-	for (int i = 0; i < numberOfValues; i++)
+	double step = (to - from) / (numberOfValues - 1);
+
+	v.push_back(from);
+
+	for (int i = 0; i < numberOfValues - 1; i++)
+
 	{
-		toReturn[i] = from + (i * inc);
-		// printf(" %f, ", toReturn[i]);
+		v.push_back(v.back() + step);
 	}
-
-	return toReturn;
+	return v;
 }
 
-vec3 *interpolate(vec3 from, vec3 to, int numberOfValues)
+vector<vec3> interpolate3d(vec3 from, vec3 to, int numberOfValues)
 {
-	vec3 *toReturn = new vec3[numberOfValues];
+	vector<vec3> v;
 
-	float *vars = interpolate(from.x, to.x, numberOfValues);
-	for (int i = 0; i < numberOfValues; i++)
+	float sf = (float)(numberOfValues - 1);
+	vec3 step = (to - from) / sf;
+
+	v.push_back(from);
+
+	for (int i = 0; i < numberOfValues - 1; i++)
 	{
-		toReturn[i].x = vars[i];
+		v.push_back(v.back() + step);
 	}
+	return v;
+}
 
-	vars = interpolate(from.y, to.y, numberOfValues);
-	for (int i = 0; i < numberOfValues; i++)
-	{
-		toReturn[i].y = vars[i];
-	}
-
-	vars = interpolate(from.z, to.z, numberOfValues);
-	for (int i = 0; i < numberOfValues; i++)
-	{
-		toReturn[i].z = vars[i];
-	}
-
-	return toReturn;
+void lookAt(vec3 p)
+{
+	vec3 f = vec3(CAMERA_ROT[0][2], CAMERA_ROT[1][2], CAMERA_ROT[2][2]);
+	vec3 forward = glm::normalize(f - p);
+	vec3 up = vec3(CAMERA_ROT[0][1], CAMERA_ROT[1][1], CAMERA_ROT[2][1]);
+	vec3 right = normalize(glm::cross(forward, up));
+	CAMERA_ROT = transpose(mat3(right, up, forward));
 }
 
 vec3 colourToVec3(uint32_t rgb)
@@ -190,56 +194,6 @@ void draw()
 	// drawLine(CanvasPoint(0, window.height / 2), CanvasPoint(window.width, window.height / 2), Colour(255, 255, 255));
 }
 
-void drawLine(CanvasPoint start, CanvasPoint end, Colour colour)
-{
-	// printf("line from (%f,%f) to (%f,%f)\n", start.x, start.y, end.x, end.y);
-	// window.clearPixels();
-	if (start.x < 0)
-	{
-		start.x = 0;
-	}
-	if (start.y < 0)
-	{
-		start.y = 0;
-	}
-	if (end.x < 0)
-	{
-		end.x = 0;
-	}
-	if (end.y < 0)
-	{
-		end.y = 0;
-	}
-	if (start.x > WIDTH)
-	{
-		start.x = WIDTH;
-	}
-	if (start.y > HEIGHT)
-	{
-		start.y = HEIGHT;
-	}
-	if (end.x > WIDTH)
-	{
-		end.x = WIDTH;
-	}
-	if (end.y > HEIGHT)
-	{
-		end.y = HEIGHT;
-	}
-	float xDiff = start.x - end.x;
-	float yDiff = start.y - end.y;
-	float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
-	// printf("calculated steps:  %f\n", numberOfSteps);
-	float xStepSize = xDiff / numberOfSteps;
-	float yStepSize = yDiff / numberOfSteps;
-	for (float i = 0.0; i < numberOfSteps; i++)
-	{
-		float x = end.x + (xStepSize * i);
-		float y = end.y + (yStepSize * i);
-		window.setPixelColour(round(x), round(y), colour.pack());
-	}
-}
-
 void drawStrokedTriangle(CanvasTriangle tri)
 {
 	drawLine(tri.vertices[0], tri.vertices[1], tri.colour);
@@ -250,7 +204,6 @@ void drawStrokedTriangle(CanvasTriangle tri)
 float getXPoint(CanvasPoint from, CanvasPoint to, int y)
 {
 	float xp = (from.x + ((y - from.y) / (to.y - from.y)) * (to.x - from.x));
-
 	return xp;
 }
 
@@ -272,58 +225,154 @@ CanvasTriangle *SplitTriangle(CanvasTriangle tri)
 	}
 	float xDiff = tri.vertices[0].x - tri.vertices[2].x;
 	float yDiff = tri.vertices[0].y - tri.vertices[2].y;
+	float zDiff = tri.vertices[0].depth - tri.vertices[2].depth;
+	// float numberOfSteps = std::max((std::max(abs(xDiff), abs(yDiff))), abs(zDiff));
 	float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
 	float xStepSize = xDiff / numberOfSteps;
 	float yStepSize = yDiff / numberOfSteps;
+	float zStepSize = zDiff / numberOfSteps;
 	float y = tri.vertices[2].y;
 	float x = 0.0;
+	float z = 0.0;
 	float i = 0.0;
 	// printf("%f, %f, %f \n", tri.vertices[0].y, tri.vertices[1].y, tri.vertices[2].y);
 	while (y >= tri.vertices[1].y)
 	{
 		y = tri.vertices[2].y + (yStepSize * i);
 		x = tri.vertices[2].x + (xStepSize * i);
+		z = tri.vertices[2].depth + (zStepSize * i);
 		i++;
 	}
 	//getXPoint not accurate and results in wonky lines
 	//float xp = getXPoint(tri.vertices[0], tri.vertices[2], tri.vertices[1].y);
 	//printf("%f, %f \n", x, xp);
-	CanvasPoint splitPoint = CanvasPoint(round(x), tri.vertices[1].y);
+	CanvasPoint splitPoint = CanvasPoint(round(x), tri.vertices[1].y, z);
 	tris[0] = CanvasTriangle(tri.vertices[0], tri.vertices[1], splitPoint);
 	tris[1] = CanvasTriangle(tri.vertices[2], splitPoint, tri.vertices[1]);
 
 	return tris;
 }
 
+std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end)
+{
+	// printf("line from (%f,%f) to (%f,%f)\n", start.x, start.y, end.x, end.y);
+	// window.clearPixels();
+
+	std::vector<CanvasPoint> points;
+	float xDiff = end.x - start.x;
+	float yDiff = end.y - start.y;
+	float zDiff = end.depth - start.depth;
+	float numberOfSteps = std::max((std::max(abs(xDiff), abs(yDiff))), abs(zDiff));
+	float xStepSize = xDiff / numberOfSteps;
+	float yStepSize = yDiff / numberOfSteps;
+	float zStepSize = zDiff / numberOfSteps;
+	for (float i = 0.0; i < numberOfSteps; i++)
+	{
+		float z = start.depth + (zStepSize * i);
+		float x = round(start.x + (xStepSize * i));
+		float y = round(start.y + (yStepSize * i));
+		points.push_back(CanvasPoint(x, y, z)); //convert this function to calculate line!
+	}
+
+	return points;
+}
+
+void drawLine(CanvasPoint start, CanvasPoint end, Colour colour)
+{
+	std::vector<CanvasPoint> points = calculateLine(start, end);
+	for (uint i = 0; i < points.size(); i++)
+	{
+		// printf("point %f %f %f\n", points[i].x, points[i].y, 1 / points[i].depth);
+		window.setPixelColour(points[i].x, points[i].y, 1 / points[i].depth, colour.pack());
+	}
+}
+
 void drawFilledTriangle(CanvasTriangle tri)
 {
+	if (tri.vertices[1].y < tri.vertices[0].y)
+	{
+		swap(tri.vertices[0], tri.vertices[1]);
+	}
+	if (tri.vertices[2].y < tri.vertices[1].y)
+	{
+		swap(tri.vertices[2], tri.vertices[1]);
+	}
+	if (tri.vertices[1].y < tri.vertices[0].y)
+	{
+		swap(tri.vertices[0], tri.vertices[1]);
+	}
+	std::vector<vector<CanvasPoint>> lines;
+	lines.push_back(calculateLine(tri.vertices[0], tri.vertices[2]));
+	lines.push_back(calculateLine(tri.vertices[0], tri.vertices[1]));
+	lines.push_back(calculateLine(tri.vertices[1], tri.vertices[2]));
+
+	drawStrokedTriangle(tri);
+	uint d = 0;
+	// printf("got to alex's ting\n");
+	for (uint i = 1; i < 3; i++)
+	{
+		for (uint j = 0; j < lines[i].size(); j++)
+		{
+			while (lines[0][d].y != lines[i][j].y && d != (lines[0].size() - 1))
+			{
+				if (lines[0][d].y > lines[i][j].y)
+				{
+					d--;
+				}
+				else if (lines[0][d].y < lines[i][j].y)
+				{
+					d++;
+				}
+			}
+			if (j == 0)
+			{
+				drawLine(lines[i][j], lines[0][d], tri.colour);
+			}
+			else if (lines[i][j].y != lines[i][j - 1].y)
+			{
+				drawLine(lines[i][j], lines[0][d], tri.colour);
+			}
+		}
+	}
+	// printf("finished alex's ting\n");
+}
+
+void drawFilledTriangle2(CanvasTriangle tri)
+{
 	CanvasTriangle *tris = SplitTriangle(tri);
-	tris[1].colour = Colour(255, 0, 0);
+
 	for (int t = 0; t < 2; t++)
 	{
+		tris[t].colour = tri.colour;
 		float xDiff = tris[t].vertices[0].x - tris[t].vertices[1].x;
 		float yDiff = tris[t].vertices[0].y - tris[t].vertices[1].y;
+		float zDiff = tris[t].vertices[0].depth - tris[t].vertices[1].depth;
+
+		// float numberOfSteps = std::max((std::max(abs(xDiff), abs(yDiff))), abs(zDiff));
 		float numberOfSteps = std::max(abs(xDiff), abs(yDiff));
+
 		// printf("number of steps = %f\n", numberOfSteps);
 		float xStepSize = xDiff / numberOfSteps;
 		float yStepSize = yDiff / numberOfSteps;
+		float zStepSize = zDiff / numberOfSteps;
 
 		float x;
 		float y;
+		float z;
 
 		for (float i = 0.0; i < numberOfSteps; i++)
 		{
 			x = tris[t].vertices[1].x + (xStepSize * i);
 			y = tris[t].vertices[1].y + (yStepSize * i);
+			z = tris[t].vertices[1].depth + (zStepSize * i);
 			//find corresponding point on [0][2] to current x,y
 			float xp = getXPoint(CanvasPoint(tris[t].vertices[0]), CanvasPoint(tris[t].vertices[2]), y);
-
 			if (xp <= WIDTH && xp >= 0) //Should be able to remove due to checks in draw line, but behaves strangely if done
 			{
-				drawLine(CanvasPoint(round(x), y), CanvasPoint(round(xp), y), tri.colour);
+				drawLine(CanvasPoint(x, y, z), CanvasPoint(xp, y, z), tri.colour);
 			}
 		}
-		// drawStrokedTriangle(tris[t]);
+		drawStrokedTriangle(tris[t]);
 	}
 
 	delete[] tris;
@@ -347,22 +396,14 @@ CanvasPoint toImageCoords(CanvasPoint p)
 	int h = window.height / 2;
 	float xp = w + (p.x);
 	float yp = h + (p.y);
-	return CanvasPoint(xp, yp);
+	return CanvasPoint(xp, yp, p.depth);
 }
 
 CanvasPoint project3DPoint(vec3 p)
 {
 	p = ((p - CAMERA_POS)) * CAMERA_ROT;
-	CanvasPoint A;
-	if (!(p.z == 0))
-	{
-		A = CanvasPoint((p.x / p.z) * FOCAL_LENGTH, (p.y / p.z) * FOCAL_LENGTH, FOCAL_LENGTH);
-	}
-	else
-	{
-		printf("a");
-		A = CanvasPoint(0, 0, 0);
-	}
+	CanvasPoint A = CanvasPoint((p.x / p.z) * FOCAL_LENGTH, (p.y / p.z) * FOCAL_LENGTH, p.z);
+	// printf("depth:  %f\n", p.z);
 	return A;
 }
 
@@ -377,8 +418,14 @@ void draw3DTriangle(ModelTriangle tri, ObjContent cont)
 	A = toImageCoords(A);
 	B = toImageCoords(B);
 	C = toImageCoords(C);
-	// drawStrokedTriangle(CanvasTriangle(A, B, C, tri.colour));
-	drawFilledTriangle(CanvasTriangle(A, B, C, tri.colour));
+	if (stroked)
+	{
+		drawStrokedTriangle(CanvasTriangle(A, B, C, tri.colour));
+	}
+	else
+	{
+		drawFilledTriangle(CanvasTriangle(A, B, C, tri.colour));
+	}
 }
 
 PpmContent ppmFileRead(string filename)
@@ -407,11 +454,14 @@ PpmContent ppmFileRead(string filename)
 	in >> line;
 	// std::cout << line << std::endl;
 
-	for (int i = 0; i < ppm.row; i++){
+	for (int i = 0; i < ppm.row; i++)
+	{
 		vector<uint32_t> row;
-		for (int j = 0; j < ppm.col; j++){
+		for (int j = 0; j < ppm.col; j++)
+		{
 			uint32_t pixel;
-			for (int k = 0; k < 3; k++){
+			for (int k = 0; k < 3; k++)
+			{
 				in >> red;
 				in >> green;
 				in >> blue;
@@ -535,9 +585,10 @@ void handleEvent(SDL_Event event)
 			cout << "UP" << endl;
 		else if (event.key.keysym.sym == SDLK_DOWN)
 			cout << "DOWN" << endl;
-		else if (event.key.keysym.sym == SDLK_u)
+		else if (event.key.keysym.sym == SDLK_z)
 		{
-			cout << "U" << endl;
+			window.clearPixels();
+			stroked = !stroked;
 		}
 		else if (event.key.keysym.sym == SDLK_c)
 		{
@@ -578,6 +629,52 @@ void handleEvent(SDL_Event event)
 			window.clearPixels();
 			CAMERA_POS = vec3(CAMERA_POS.x - STEP, CAMERA_POS.y, CAMERA_POS.z);
 		}
+		else if (event.key.keysym.sym == SDLK_t)
+		{
+			window.clearPixels();
+			mat3 X_ROT = {1, 0, 0, 0, cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA)};
+			CAMERA_ROT = CAMERA_ROT * X_ROT;
+		}
+		else if (event.key.keysym.sym == SDLK_g)
+		{
+			window.clearPixels();
+			mat3 X_ROT = {1, 0, 0, 0, cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA)};
+			CAMERA_ROT = CAMERA_ROT * glm::inverse(X_ROT);
+		}
+		else if (event.key.keysym.sym == SDLK_y)
+		{
+			window.clearPixels();
+			mat3 Y_ROT = {cos(THETA), 0, sin(THETA), 0, 1, 0, -sin(THETA), 0, cos(THETA)};
+			CAMERA_ROT = CAMERA_ROT * Y_ROT;
+		}
+		else if (event.key.keysym.sym == SDLK_h)
+		{
+			window.clearPixels();
+			mat3 Y_ROT = {cos(THETA), 0, sin(THETA), 0, 1, 0, -sin(THETA), 0, cos(THETA)};
+			CAMERA_ROT = CAMERA_ROT * glm::inverse(Y_ROT);
+		}
+		else if (event.key.keysym.sym == SDLK_u)
+		{
+			window.clearPixels();
+			mat3 Z_ROT = {cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA), 0, 0, 0, 1};
+			CAMERA_ROT = CAMERA_ROT * Z_ROT;
+		}
+		else if (event.key.keysym.sym == SDLK_j)
+		{
+			window.clearPixels();
+			mat3 Z_ROT = {cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA), 0, 0, 0, 1};
+			CAMERA_ROT = CAMERA_ROT * glm::inverse(Z_ROT);
+		}
+		else if (event.key.keysym.sym == SDLK_l)
+		{
+			window.clearPixels();
+			lookAt(vec3(0.415989, 5.218497, -3.567968));
+		}
+		// else if (event.key.keysym.sym == SDLK_l)
+		// {
+		// 	cout << "C" << endl;
+		// 	drawFilledTriangle(getRandomTriangle());
+		// }
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
 	{
