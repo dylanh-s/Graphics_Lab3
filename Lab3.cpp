@@ -283,7 +283,7 @@ void drawLine(CanvasPoint start, CanvasPoint end, Colour colour)
 	for (uint i = 0; i < points.size(); i++)
 	{
 		// printf("point %f %f %f\n", points[i].x, points[i].y, 1 / points[i].depth);
-		window.setPixelColour(points[i].x, points[i].y, 1 / points[i].depth, colour.pack());
+		window.setPixelColour(points[i].x, points[i].y, points[i].depth, colour.pack());
 	}
 }
 
@@ -402,7 +402,7 @@ CanvasPoint toImageCoords(CanvasPoint p)
 CanvasPoint project3DPoint(vec3 p)
 {
 	p = ((p - CAMERA_POS)) * CAMERA_ROT;
-	CanvasPoint A = CanvasPoint((p.x / p.z) * FOCAL_LENGTH, (p.y / p.z) * FOCAL_LENGTH, p.z);
+	CanvasPoint A = CanvasPoint((p.x / p.z) * FOCAL_LENGTH, (p.y / p.z) * FOCAL_LENGTH, 1 / p.z);
 	// printf("depth:  %f\n", p.z);
 	return A;
 }
