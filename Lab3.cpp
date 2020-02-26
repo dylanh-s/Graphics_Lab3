@@ -459,14 +459,10 @@ PpmContent ppmFileRead(string filename)
 		vector<uint32_t> row;
 		for (int j = 0; j < ppm.col; j++)
 		{
-			uint32_t pixel;
-			for (int k = 0; k < 3; k++)
-			{
-				in >> red;
-				in >> green;
-				in >> blue;
-				pixel = (255 << 24) + (red << 16) + (green << 8) + blue;
-			}
+			in >> red;
+			in >> green;
+			in >> blue;
+			uint32_t pixel = (255 << 24) + (red << 16) + (green << 8) + blue;
 			row.push_back(pixel);
 		}
 		ppm.image.push_back(row);
