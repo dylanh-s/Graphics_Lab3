@@ -92,7 +92,7 @@ void DrawingWindow::setPixelColour(int x, int y, float depth, uint32_t colour)
   else
   {
     // std::cout << depth << std::endl;
-    if (getPixelDepth(x, y) > depth)
+    if (getPixelDepth(x, y) >= depth)
     {
       pixelBuffer[(y * width) + x] = colour;
       setPixelDepth(x, y, depth);

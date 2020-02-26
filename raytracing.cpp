@@ -74,7 +74,8 @@ int main(int argc, char *argv[])
 {
 	SDL_Event event;
 	// PpmContent ppm = ppmFileRead("texture.ppm");
-	ObjContent content = objFileRead("test-tri.obj");
+	ObjContent content = objFileRead("cornell-box.obj");
+	// ObjContent content = objFileRead("test-tri.obj");
 
 	while (true)
 	{
@@ -106,7 +107,7 @@ RayTriangleIntersection getClosestIntersection(ObjContent cont, vec3 ray)
 		mat3 DEMatrix(-ray, e0, e1);
 		vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
 
-		float t = possibleSolution.x;
+		float t = abs(possibleSolution.x);
 		float u = possibleSolution.y;
 		float v = possibleSolution.z;
 
@@ -120,6 +121,8 @@ RayTriangleIntersection getClosestIntersection(ObjContent cont, vec3 ray)
 				vec3 v_tri = v * (triangle.vertices[1] - triangle.vertices[0]);
 				vec3 point_world = (u_tri + v_tri) + triangle.vertices[0];
 				closest = RayTriangleIntersection(point_world, t, triangle);
+				// printf("t = %f", t);
+				// std::cout << triangle.colour << std::endl;
 			}
 		}
 	}
@@ -158,10 +161,20 @@ void drawRaytraces(ObjContent cont)
 			ray = glm::normalize(ray);
 			// printf("ray (%f,%f) = [%f,%f,%f]\n", xp, yp, ray.x, ray.y, ray.z);
 			RayTriangleIntersection intersection = getClosestIntersection(cont, ray);
-			CanvasPoint intersection_point = toImageCoords(project3DPoint(intersection.intersectionPoint));
-			window.setPixelColour(intersection_point.x, intersection_point.y, intersection_point.depth, intersection.intersectedTriangle.colour.pack());
+			if (intersection.distanceFromCamera < INFINITY)
+			{
+				CanvasPoint intersection_point = project3DPoint(intersection.intersectionPoint);
+				// printf("%i\n", intersection.intersectedTriangle.colour.red);
+				if (intersection.intersectedTriangle.colour.red == 255 && intersection.intersectedTriangle.colour.blue == 0 && intersection.intersectedTriangle.colour.green == 0)
+				{
+					// std::cout << intersection.intersectedTriangle.colour << std::endl;
+					// printf("%f\n", intersection_point.depth);
+				}
+				window.setPixelColour(x, y, -0.5, intersection.intersectedTriangle.colour.pack());
+			}
 		}
 	}
+	// printf("done\n");
 }
 
 std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end)
