@@ -103,7 +103,7 @@ RayTriangleIntersection getClosestIntersection(ObjContent cont, vec3 ray)
 
 		vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
 		vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
-		vec3 SPVector = CAMERA_POS - triangle.vertices[0];
+		vec3 SPVector = (CAMERA_POS - triangle.vertices[0]);
 		mat3 DEMatrix(-ray, e0, e1);
 		vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
 
@@ -157,7 +157,7 @@ void drawRaytraces(ObjContent cont)
 			// calculate direction vector
 			float xp = (x)-w;
 			float yp = (y)-h;
-			vec3 ray = vec3(xp, yp, FOCAL_LENGTH);
+			vec3 ray = vec3(xp, yp, FOCAL_LENGTH) * CAMERA_ROT;
 			ray = glm::normalize(ray);
 			// printf("ray (%f,%f) = [%f,%f,%f]\n", xp, yp, ray.x, ray.y, ray.z);
 			RayTriangleIntersection intersection = getClosestIntersection(cont, ray);
@@ -170,6 +170,7 @@ void drawRaytraces(ObjContent cont)
 					// std::cout << intersection.intersectedTriangle.colour << std::endl;
 					// printf("%f\n", intersection_point.depth);
 				}
+				// CanvasPoint pro_point = project3DPoint(vec3(x, y, FOCAL_LENGTH));
 				window.setPixelColour(x, y, -0.5, intersection.intersectedTriangle.colour.pack());
 			}
 		}

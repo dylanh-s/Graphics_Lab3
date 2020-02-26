@@ -1,4 +1,5 @@
 #include "DrawingWindow.h"
+#include <limits>
 
 // Simple constructor method
 DrawingWindow::DrawingWindow()
