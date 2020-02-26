@@ -2,6 +2,7 @@
 #include <CanvasTriangle.h>
 #include <DrawingWindow.h>
 #include <Utils.h>
+#include <RayTriangleIntersection.h>
 // #include "ObjReader.h"
 #include <glm/glm.hpp>
 #include <fstream>
@@ -12,10 +13,10 @@
 using namespace std;
 using namespace glm;
 
-#define WIDTH 500
-#define HEIGHT 500
+#define WIDTH 250
+#define HEIGHT 250
 #define STEP 1
-float FOCAL_LENGTH = 250;
+float FOCAL_LENGTH = 125;
 vec3 CAMERA_POS(0, 4, 5);
 mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 bool stroked = false;
@@ -56,35 +57,110 @@ void update();
 void drawLine(CanvasPoint start, CanvasPoint end, Colour colour);
 void drawObj(ObjContent content);
 void handleEvent(SDL_Event event);
-void draw3DTriangle(ModelTriangle tri, ObjContent cont);
-void drawFilledTriangle(CanvasTriangle tri);
-vector<double> interpolate(double from, double to, int numberOfValues);
-vector<vec3> interpolate3d(vec3 from, vec3 to, int numberOfValues);
-void drawStrokedTriangle(CanvasTriangle tri);
-CanvasTriangle getRandomTriangle();
+// void draw3DTriangle(ModelTriangle tri, ObjContent cont);
+// void drawFilledTriangle(CanvasTriangle tri);
+// vector<double> interpolate(double from, double to, int numberOfValues);
+// vector<vec3> interpolate3d(vec3 from, vec3 to, int numberOfValues);
+// void drawStrokedTriangle(CanvasTriangle tri);
+// CanvasTriangle getRandomTriangle();
 ObjContent objFileRead(string filename);
+void drawRaytraces(ObjContent cont);
 ObjContent populatePalette(string filename);
-PpmContent ppmFileRead(string filename);
+// PpmContent ppmFileRead(string filename);
 
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
-	PpmContent ppm = ppmFileRead("texture.ppm");
-	ObjContent content = objFileRead("cornell-box.obj");
+	// PpmContent ppm = ppmFileRead("texture.ppm");
+	ObjContent content = objFileRead("test-tri.obj");
 
 	while (true)
 	{
 		// We MUST poll for events - otherwise the window will freeze !
 		if (window.pollForInputEvents(&event))
+		{
 			handleEvent(event);
-		update();
+		}
+		// update();
 		// drawFilledTriangle(getRandomTriangle());
 		// drawObj(content);
-		draw();
+		drawRaytraces(content);
 		// Need to render the frame at the end, or nothing actually gets shown on the screen !
 		window.renderFrame();
+	}
+}
+
+RayTriangleIntersection getClosestIntersection(ObjContent cont, vec3 ray)
+{
+	RayTriangleIntersection closest = RayTriangleIntersection();
+	closest.distanceFromCamera = INFINITY;
+	for (int c = 0; c < cont.faces.size(); c++)
+	{
+		ModelTriangle triangle = cont.faces[c];
+
+		vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
+		vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
+		vec3 SPVector = CAMERA_POS - triangle.vertices[0];
+		mat3 DEMatrix(-ray, e0, e1);
+		vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
+
+		float t = possibleSolution.x;
+		float u = possibleSolution.y;
+		float v = possibleSolution.z;
+
+		// t,u,v is valid
+		if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0)
+		{
+			if (t < closest.distanceFromCamera)
+			{
+				// find position on triangle
+				vec3 u_tri = u * (triangle.vertices[2] - triangle.vertices[0]);
+				vec3 v_tri = v * (triangle.vertices[1] - triangle.vertices[0]);
+				vec3 point_world = (u_tri + v_tri) + triangle.vertices[0];
+				closest = RayTriangleIntersection(point_world, t, triangle);
+			}
+		}
+	}
+	return closest;
+}
+
+CanvasPoint toImageCoords(CanvasPoint p)
+{
+	int w = window.width / 2;
+	int h = window.height / 2;
+	float xp = w + (p.x);
+	float yp = h + (p.y);
+	return CanvasPoint(xp, yp, p.depth);
+}
+
+CanvasPoint project3DPoint(vec3 p)
+{
+	p = ((p - CAMERA_POS)) * CAMERA_ROT;
+	CanvasPoint A = CanvasPoint((p.x / p.z) * FOCAL_LENGTH, (p.y / p.z) * FOCAL_LENGTH, 1 / p.z);
+	// printf("depth:  %f\n", p.z);
+	return A;
+}
+
+void drawRaytraces(ObjContent cont)
+{
+	int w = window.width / 2;
+	int h = window.height / 2;
+	for (int x = 0; x <= WIDTH; x++)
+	{
+		for (int y = 0; y <= HEIGHT; y++)
+		{
+			// calculate direction vector
+			float xp = (x)-w;
+			float yp = (y)-h;
+			vec3 ray = vec3(xp, yp, FOCAL_LENGTH);
+			ray = glm::normalize(ray);
+			// printf("ray (%f,%f) = [%f,%f,%f]\n", xp, yp, ray.x, ray.y, ray.z);
+			RayTriangleIntersection intersection = getClosestIntersection(cont, ray);
+			CanvasPoint intersection_point = toImageCoords(project3DPoint(intersection.intersectionPoint));
+			window.setPixelColour(intersection_point.x, intersection_point.y, intersection_point.depth, intersection.intersectedTriangle.colour.pack());
+		}
 	}
 }
 
@@ -235,7 +311,7 @@ void handleEvent(SDL_Event event)
 		}
 		else if (event.key.keysym.sym == SDLK_i)
 		{
-			ppmFileRead("");
+			// ppmFileRead("");
 		}
 		else if (event.key.keysym.sym == SDLK_s)
 		{
@@ -306,7 +382,7 @@ void handleEvent(SDL_Event event)
 		else if (event.key.keysym.sym == SDLK_l)
 		{
 			window.clearPixels();
-			lookAt(vec3(0.415989, 5.218497, -3.567968));
+			// lookAt(vec3(0.415989, 5.218497, -3.567968));
 		}
 		// else if (event.key.keysym.sym == SDLK_l)
 		// {
@@ -317,5 +393,6 @@ void handleEvent(SDL_Event event)
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
 	{
 		cout << "MOUSE CLICKED" << endl;
-		drawFilledTriangle(getRandomTriangle());
+		// drawFilledTriangle(getRandomTriangle());
 	}
+}

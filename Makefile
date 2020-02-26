@@ -1,4 +1,4 @@
-PROJECT_NAME = Lab3
+PROJECT_NAME = raytracing
 
 # Define the names of key files
 SOURCE_FILE = $(PROJECT_NAME).cpp
