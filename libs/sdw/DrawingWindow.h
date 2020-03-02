@@ -1,3 +1,5 @@
+#ifndef DRAWINGWINDOW_H
+#define DRAWINGWINDOW_H
 #include <SDL2/SDL.h>
 #include <iostream>
 
@@ -42,3 +44,4 @@ public:
     }
   }
 };
+#endif

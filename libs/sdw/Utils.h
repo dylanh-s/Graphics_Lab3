@@ -1,3 +1,5 @@
+#ifndef UTILS_H
+#define UTILS_H
 #include <algorithm>
 
 std::string* split(std::string line, char delim);
@@ -15,3 +17,4 @@ std::string* split(std::string line, char delim)
     }
     return tokens;
 }
+#endif

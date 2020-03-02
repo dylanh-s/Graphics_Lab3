@@ -1,3 +1,5 @@
+#ifndef MODELTRIANGLE_H
+#define MODELTRIANGLE_H
 #include <glm/glm.hpp>
 #include "Colour.h"
 #include <string>
@@ -29,3 +31,4 @@ std::ostream &operator<<(std::ostream &os, const ModelTriangle &triangle)
   os << std::endl;
   return os;
 }
+#endif

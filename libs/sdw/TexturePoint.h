@@ -1,3 +1,5 @@
+#ifndef TEXTUREPOINT_H
+#define TEXTUREPOINT_H
 #include <iostream>
 
 class TexturePoint
@@ -26,3 +28,4 @@ std::ostream& operator<<(std::ostream& os, const TexturePoint& point)
     os << "(" << point.x << ", " << point.y << ")" << std::endl;
     return os;
 }
+#endif

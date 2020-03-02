@@ -1,3 +1,5 @@
+#ifndef RAYTRIANGLEINTERSECTION_H
+#define RAYTRIANGLEINTERSECTION_H
 #include <glm/glm.hpp>
 #include <iostream>
 
@@ -25,3 +27,4 @@ public:
 //     os << "Intersection is at " << intersection.intersectionPoint << " on triangle " << intersection.intersectedTriangle << " at a distance of " << intersection.distanceFromCamera << std::endl;
 //     return os;
 // }
+#endif

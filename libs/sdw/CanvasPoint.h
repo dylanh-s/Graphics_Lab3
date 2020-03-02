@@ -1,3 +1,5 @@
+#ifndef CANVASPOINT_H
+#define CANVASPOINT_H
 #include "TexturePoint.h"
 #include <iostream>
 
@@ -49,3 +51,4 @@ std::ostream& operator<<(std::ostream& os, const CanvasPoint& point)
     os << "(" << point.x << ", " << point.y << ", " << point.depth << ") " << point.brightness << std::endl;
     return os;
 }
+#endif
