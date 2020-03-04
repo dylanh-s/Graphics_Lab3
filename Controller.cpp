@@ -4,6 +4,8 @@
 using namespace std;
 using namespace glm;
 
+int MODE = 1;
+
 void update();
 void draw(PpmContent ppm, ObjContent obj);
 void handleEvent(SDL_Event event);
@@ -64,7 +66,6 @@ vec3 colourToVec3(uint32_t rgb)
 	int r = (rgb >> 16) & 0xFF;
 	int g = (rgb >> 8) & 0xFF;
 	int b = rgb & 0xFF;
-
 	return vec3(r, g, b);
 }
 
@@ -102,8 +103,18 @@ void update()
 
 void draw(PpmContent ppm, ObjContent obj)
 {
-	// drawRaster(obj);
-	drawRaytrace(obj);
+	if (MODE == 0)
+	{
+		drawFrame(obj);
+	}
+	else if (MODE == 1)
+	{
+		drawRaster(obj);
+	}
+	else if (MODE == 2)
+	{
+		drawRaytrace(obj);
+	}
 }
 
 void handleEvent(SDL_Event event)
@@ -130,76 +141,75 @@ void handleEvent(SDL_Event event)
 		{
 			window.clearPixels();
 		}
-		else if (event.key.keysym.sym == SDLK_s)
+		else if (event.key.keysym.sym == SDLK_m)
 		{
 			window.clearPixels();
-			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y + DELTA, CAMERA_POS.z);
-		}
-		else if (event.key.keysym.sym == SDLK_w)
-		{
-			window.clearPixels();
-			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y - DELTA, CAMERA_POS.z);
+			MODE = (MODE + 1) % 3;
 		}
 		else if (event.key.keysym.sym == SDLK_a)
 		{
 			window.clearPixels();
-			CAMERA_POS = vec3(CAMERA_POS.x + DELTA, CAMERA_POS.y, CAMERA_POS.z);
+			translateCamera(DELTA, 0, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_d)
 		{
 			window.clearPixels();
-			CAMERA_POS = vec3(CAMERA_POS.x - DELTA, CAMERA_POS.y, CAMERA_POS.z);
+			translateCamera(-DELTA, 0, 0);
+		}
+		else if (event.key.keysym.sym == SDLK_s)
+		{
+			window.clearPixels();
+			translateCamera(0, DELTA, 0);
+		}
+		else if (event.key.keysym.sym == SDLK_w)
+		{
+			window.clearPixels();
+			translateCamera(0, -DELTA, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_q)
 		{
 			window.clearPixels();
-			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y, CAMERA_POS.z + DELTA);
+			translateCamera(0, 0, DELTA);
 		}
 		else if (event.key.keysym.sym == SDLK_e)
 		{
 			window.clearPixels();
-			CAMERA_POS = vec3(CAMERA_POS.x, CAMERA_POS.y, CAMERA_POS.z - DELTA);
+			translateCamera(0, 0, -DELTA);
 		}
 		else if (event.key.keysym.sym == SDLK_t)
 		{
 			window.clearPixels();
-			mat3 X_ROT = {1, 0, 0, 0, cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA)};
-			CAMERA_ROT = CAMERA_ROT * X_ROT;
+			rotateCamera(THETA, 0, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_g)
 		{
 			window.clearPixels();
-			mat3 X_ROT = {1, 0, 0, 0, cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA)};
-			CAMERA_ROT = CAMERA_ROT * glm::inverse(X_ROT);
+			rotateCamera(-THETA, 0, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_y)
 		{
 			window.clearPixels();
-			mat3 Y_ROT = {cos(THETA), 0, sin(THETA), 0, 1, 0, -sin(THETA), 0, cos(THETA)};
-			CAMERA_ROT = CAMERA_ROT * Y_ROT;
+			rotateCamera(0, THETA, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_h)
 		{
 			window.clearPixels();
-			mat3 Y_ROT = {cos(THETA), 0, sin(THETA), 0, 1, 0, -sin(THETA), 0, cos(THETA)};
-			CAMERA_ROT = CAMERA_ROT * glm::inverse(Y_ROT);
+			rotateCamera(0, -THETA, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_u)
 		{
 			window.clearPixels();
-			mat3 Z_ROT = {cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA), 0, 0, 0, 1};
-			CAMERA_ROT = CAMERA_ROT * Z_ROT;
+			rotateCamera(0, 0, THETA);
 		}
 		else if (event.key.keysym.sym == SDLK_j)
 		{
 			window.clearPixels();
-			mat3 Z_ROT = {cos(THETA), -sin(THETA), 0, sin(THETA), cos(THETA), 0, 0, 0, 1};
-			CAMERA_ROT = CAMERA_ROT * glm::inverse(Z_ROT);
+			rotateCamera(0, 0, -THETA);
 		}
 		else if (event.key.keysym.sym == SDLK_l)
 		{
 			window.clearPixels();
-			lookAt(vec3(0.415989, 5.218497, -3.567968));
+			focusCamera(vec3(0.415989, 5.218497, -3.567968));
 		}
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)

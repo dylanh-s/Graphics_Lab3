@@ -44,16 +44,14 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 
 void drawRaytrace(ObjContent obj)
 {
-	int w = window.width / 2;
-	int h = window.height / 2;
 	for (int x = 0; x <= WIDTH; x++)
 	{
 		for (int y = 0; y <= HEIGHT; y++)
 		{
 			// calculate direction vector
-			float xp = (x)-w;
-			float yp = (y)-h;
-			vec3 ray = vec3(xp, yp, FOCAL_LENGTH) * CAMERA_ROT;
+			float xp = -(x - w);
+			float yp = (y - h);
+			vec3 ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
 			ray = glm::normalize(ray);
 			RayTriangleIntersection intersection = getClosestIntersection(obj, ray);
 			if (intersection.distanceFromCamera < INFINITY)

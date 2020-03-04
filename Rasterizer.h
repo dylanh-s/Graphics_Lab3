@@ -5,12 +5,25 @@
 using namespace std;
 using namespace glm;
 
+CanvasPoint projectPoint(vec3 p);
+CanvasTriangle projectTriangle(ModelTriangle t);
 std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end);
 void drawLine(CanvasPoint start, CanvasPoint end, Colour colour);
 void drawStrokedTriangle(CanvasTriangle tri);
 void drawFilledTriangle(CanvasTriangle tri);
-void draw3DTriangle(ModelTriangle tri);
+void drawFrame(ObjContent obj);
 void drawRaster(ObjContent obj);
+
+CanvasPoint projectPoint(vec3 p)
+{
+	p = (p - CAMERA_POS) * CAMERA_ROT;
+	return CanvasPoint((p.x / -p.z) * FOCAL_LENGTH + w, (p.y / p.z) * FOCAL_LENGTH + h, 1 / p.z);
+}
+
+CanvasTriangle projectTriangle(ModelTriangle t)
+{
+	return(CanvasTriangle(projectPoint(t.vertices[0]), projectPoint(t.vertices[1]), projectPoint(t.vertices[2]), t.colour));
+}
 
 std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end)
 {
@@ -97,22 +110,19 @@ void drawFilledTriangle(CanvasTriangle tri)
 	}
 }
 
-void draw3DTriangle(ModelTriangle tri)
+void drawFrame(ObjContent obj)
 {
-	CanvasPoint A = projectPoint(tri.vertices[0]);
-	CanvasPoint B = projectPoint(tri.vertices[1]);
-	CanvasPoint C = projectPoint(tri.vertices[2]);
-	A = convertCoordinates(A);
-	B = convertCoordinates(B);
-	C = convertCoordinates(C);
-	drawFilledTriangle(CanvasTriangle(A, B, C, tri.colour));
+	for (uint i = 0; i < obj.faces.size(); i++)
+	{
+		drawStrokedTriangle(projectTriangle(obj.faces.at(i)));
+	}
 }
 
 void drawRaster(ObjContent obj)
 {
 	for (uint i = 0; i < obj.faces.size(); i++)
 	{
-		draw3DTriangle(obj.faces.at(i));
+		drawFilledTriangle(projectTriangle(obj.faces.at(i)));
 	}
 }
 #endif
