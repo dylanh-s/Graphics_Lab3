@@ -2,16 +2,21 @@
 #define COLOUR_H
 #include <iostream>
 
+#define AMBIENCE 0.35f
+
 class Colour
 {
+private:
 public:
   std::string name;
   int red;
   int green;
   int blue;
+  float brightness;
 
   Colour()
   {
+    brightness = AMBIENCE;
   }
 
   Colour(int r, int g, int b)
@@ -21,8 +26,16 @@ public:
     green = g;
     blue = b;
   }
+  Colour(int r, int g, int b, float bri)
+  {
+    name = "";
+    brightness = bri;
+    red = r;
+    green = g;
+    blue = b;
+  }
 
-  Colour(std::string n, int r, int g, int b)
+  Colour(std::string n, int r, int g, int b, float bri)
   {
     name = n;
     red = r;
@@ -30,9 +43,26 @@ public:
     blue = b;
   }
 
+  Colour(std::string n, int r, int g, int b)
+  {
+    name = n;
+
+    red = r;
+    green = g;
+    blue = b;
+  }
+
   uint32_t pack()
   {
-    uint32_t colour = (255 << 24) + (int(red) << 16) + (int(green) << 8) + int(blue);
+    if (brightness > 1.0f)
+    {
+      brightness = 1.0f;
+    }
+    if (brightness < AMBIENCE)
+    {
+      brightness = AMBIENCE;
+    }
+    uint32_t colour = (255 << 24) + (int(red * brightness) << 16) + (int(green * brightness) << 8) + int(blue * brightness);
     return colour;
   }
 };

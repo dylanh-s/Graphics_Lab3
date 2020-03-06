@@ -4,7 +4,7 @@
 using namespace std;
 using namespace glm;
 
-int MODE = 1;
+int MODE = 2;
 
 void update();
 void draw(PpmContent ppm, ObjContent obj);
@@ -92,7 +92,7 @@ CanvasTriangle getRandomTriangle()
 			allDifferent = false;
 		}
 	}
-	
+
 	return CanvasTriangle(v0, v1, v2, Colour(rand() % 255, rand() % 255, rand() % 255));
 }
 
