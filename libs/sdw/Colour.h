@@ -2,7 +2,7 @@
 #define COLOUR_H
 #include <iostream>
 
-#define AMBIENCE 0.35f
+#define AMBIENCE 0.2f
 
 class Colour
 {

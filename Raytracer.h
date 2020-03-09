@@ -10,9 +10,54 @@ vector<vec3> LIGHTS;
 RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray);
 void drawRaytraces(ObjContent obj);
 
-//
+int inShadow(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
+{
+	int lightsInShadowOf = 0;
+	for (int l = 0; l < lightSources.size(); l++)
+	{
+		vec3 shadowRay = lightSources.at(l) - pointInWorld;
+		// shadowRay = normalize(shadowRay);
+		float distanceToLight = length(shadowRay);
+		bool inShadow = 0;
+		for (uint c = 0; c < obj.faces.size(); c++)
+		{
+			ModelTriangle triangle = obj.faces[c];
 
-float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world)
+			vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
+			vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
+			vec3 SPVector = (pointInWorld - triangle.vertices[0]);
+			mat3 DEMatrix(-normalize(shadowRay), e0, e1);
+			vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
+
+			float t = possibleSolution.x;
+			float u = possibleSolution.y;
+			float v = possibleSolution.z;
+			// t,u,v is valid
+			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.001f)
+			{
+				// vec3 u_tri = u * (triangle.vertices[1] - triangle.vertices[0]);
+				// vec3 v_tri = v * (triangle.vertices[2] - triangle.vertices[0]);
+				// vec3 triPointWorld = (u_tri + v_tri) + triangle.vertices[0];
+				// if (length(triPointWorld - pointInWorld) < distanceToLight)
+				// {
+				// 	return true;
+				// }
+				if (t < (distanceToLight) && (abs(t - distanceToLight) > 0.01f))
+				{
+					inShadow = true;
+					break;
+				}
+			}
+		}
+		if (inShadow)
+		{
+			lightsInShadowOf += 1;
+		}
+	}
+	return lightsInShadowOf;
+}
+
+float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray)
 {
 	float brightnessIncrease;
 	for (int i = 0; i < lightSources.size(); i++)
@@ -27,9 +72,17 @@ float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_w
 		float angle_between = dot(normalize(lightVec), normalize(planeNormal));
 		if (angle_between > 0.0f)
 		{
-			brightnessIncrease += (angle_between)*0.75;
+			brightnessIncrease += (angle_between);
 		}
-		// printf("%f\n", angle_between);
+
+		vec3 flipRay = -1.0f * ray;
+		vec3 normal = normalize(planeNormal);
+		vec3 reflection = lightVec - (2.0f * (dot(lightVec, normal)) * normal);
+		angle_between = dot(normalize(reflection), normalize(flipRay));
+		if (angle_between > 0.0f)
+		{
+			brightnessIncrease += pow(angle_between, 24.0f);
+		}
 	}
 	return brightnessIncrease;
 	// implement bottom val on colour
@@ -43,6 +96,12 @@ float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_w
 	// dot the normal and light but normalised (might need -ves)
 	// check between 0-1 float
 	// increm brightness again
+
+	// specular highlighting
+	// 𝑟=𝑑−2(𝑑⋅𝑛)𝑛
+	// normal = normalize(normal)
+	// reflection=incidence-2(dot(incidence,normal))*normal
+	// brightness = dot(reflection,ray)
 }
 
 RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
@@ -62,7 +121,6 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 		float t = abs(possibleSolution.x);
 		float u = possibleSolution.y;
 		float v = possibleSolution.z;
-
 		// t,u,v is valid
 		if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0)
 		{
@@ -75,7 +133,10 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 
 				vec3 planeNorm = cross(e0, e1);
 
-				float brightness = getBrightness(LIGHTS, planeNorm, point_world);
+				float brightness = getBrightness(LIGHTS, planeNorm, point_world, ray);
+				int shadows = inShadow(obj, LIGHTS, point_world, ray, c);
+
+				brightness -= shadows * 0.3f;
 				Colour col = Colour(triangle.colour.red, triangle.colour.green, triangle.colour.blue, brightness);
 				closest = RayTriangleIntersection(point_world, t, triangle, col);
 			}
@@ -88,7 +149,10 @@ void drawRaytrace(ObjContent obj)
 {
 	vec3 a = vec3(-0.884011, 5.219334, -2.517968);
 	vec3 b = vec3(0.415989, 5.218497, -3.567968);
+	vector<vec3> empty;
+	LIGHTS = empty;
 	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
+	// LIGHTS.push_back(CAMERA_POS);
 	for (int x = 0; x <= WIDTH; x++)
 	{
 		for (int y = 0; y <= HEIGHT; y++)
