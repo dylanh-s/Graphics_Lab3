@@ -40,7 +40,7 @@ std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end)
 		float z = start.depth + (zStepSize * i);
 		float x = round(start.x + (xStepSize * i));
 		float y = round(start.y + (yStepSize * i));
-		points.push_back(CanvasPoint(x, y, z)); 
+		points.push_back(CanvasPoint(x, y, z));
 	}
 
 	return points;

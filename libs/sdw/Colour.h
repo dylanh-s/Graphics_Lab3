@@ -22,6 +22,7 @@ public:
   Colour(int r, int g, int b)
   {
     name = "";
+    brightness = 1.0f;
     red = r;
     green = g;
     blue = b;

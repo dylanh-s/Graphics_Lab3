@@ -12,7 +12,7 @@ void handleEvent(SDL_Event event);
 vector<double> interpolate(double from, double to, int numberOfValues);
 vector<vec3> interpolate3D(vec3 from, vec3 to, int numberOfValues);
 CanvasTriangle getRandomTriangle();
-
+void drawTexture(PpmContent ppm);
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
 			handleEvent(event);
 		update();
 		draw(ppm, obj);
+		// drawTexture(ppm);
 		window.renderFrame();
 	}
 }
@@ -101,6 +102,18 @@ void update()
 	// Function for performing animation (shifting artifacts or moving the camera)
 }
 
+void drawTexture(PpmContent ppm)
+{
+	for (int i = 0; i < ppm.col; i++)
+	{
+		for (int j = 0; j < ppm.row; j++)
+		{
+			// cout << ppm.image.at(j).at(i) << std::endl;
+			// window.setPixelColour(i, j, -0.5, ppm.image.at(j).at(i));
+		}
+	}
+}
+
 void draw(PpmContent ppm, ObjContent obj)
 {
 	if (MODE == 0)
@@ -113,7 +126,20 @@ void draw(PpmContent ppm, ObjContent obj)
 	}
 	else if (MODE == 2)
 	{
-		drawRaytrace(obj);
+		// solid shadows
+		drawRaytrace(obj, MODE);
+	}
+	else if (MODE == 3)
+	{
+		// soft shadows
+		drawRaytrace(obj, MODE);
+		// drawTexture(ppm);
+	}
+	else if (MODE == 4)
+	{
+		// no shadows
+		drawRaytrace(obj, MODE);
+		// drawTexture(ppm);
 	}
 }
 
@@ -144,7 +170,12 @@ void handleEvent(SDL_Event event)
 		else if (event.key.keysym.sym == SDLK_m)
 		{
 			window.clearPixels();
-			MODE = (MODE + 1) % 3;
+			MODE = (MODE + 1) % 5;
+		}
+		else if (event.key.keysym.sym == SDLK_n)
+		{
+			window.clearPixels();
+			MODE = (MODE - 1) % 5;
 		}
 		else if (event.key.keysym.sym == SDLK_a)
 		{

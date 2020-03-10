@@ -11,10 +11,10 @@ using namespace glm;
 #define THETA 0.02
 #define FOCAL_LENGTH 250.0
 
-int w = WIDTH/2;
-int h = HEIGHT/2;
+int w = WIDTH / 2;
+int h = HEIGHT / 2;
 
-vec3 CAMERA_POS(0, 4, 5);
+vec3 CAMERA_POS(0, 3, 5);
 mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
@@ -29,9 +29,9 @@ void translateCamera(float x, float y, float z)
 
 void rotateCamera(float x, float y, float z)
 {
-	CAMERA_ROT *= mat3{cos(z)*cos(y), cos(z)*sin(y)*sin(x)-sin(z)*cos(x), cos(z)*sin(y)*cos(x)+sin(z)*sin(x), 
-					   sin(z)*cos(y), sin(z)*sin(y)*sin(x)+cos(z)*cos(x), sin(z)*sin(y)*cos(x)-cos(z)*sin(x),
-					   -sin(y), cos(y)*sin(x), cos(y)*cos(x)}; 
+	CAMERA_ROT *= mat3{cos(z) * cos(y), cos(z) * sin(y) * sin(x) - sin(z) * cos(x), cos(z) * sin(y) * cos(x) + sin(z) * sin(x),
+					   sin(z) * cos(y), sin(z) * sin(y) * sin(x) + cos(z) * cos(x), sin(z) * sin(y) * cos(x) - cos(z) * sin(x),
+					   -sin(y), cos(y) * sin(x), cos(y) * cos(x)};
 }
 
 void focusCamera(vec3 p)

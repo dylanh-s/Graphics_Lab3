@@ -6,6 +6,7 @@ using namespace std;
 using namespace glm;
 
 vector<vec3> LIGHTS;
+int SHADOW_MODE;
 
 RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray);
 void drawRaytraces(ObjContent obj);
@@ -33,15 +34,8 @@ int inShadow(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 
 			float u = possibleSolution.y;
 			float v = possibleSolution.z;
 			// t,u,v is valid
-			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.001f)
+			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.3f && c != triangleIndex)
 			{
-				// vec3 u_tri = u * (triangle.vertices[1] - triangle.vertices[0]);
-				// vec3 v_tri = v * (triangle.vertices[2] - triangle.vertices[0]);
-				// vec3 triPointWorld = (u_tri + v_tri) + triangle.vertices[0];
-				// if (length(triPointWorld - pointInWorld) < distanceToLight)
-				// {
-				// 	return true;
-				// }
 				if (t < (distanceToLight) && (abs(t - distanceToLight) > 0.01f))
 				{
 					inShadow = true;
@@ -134,9 +128,30 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 				vec3 planeNorm = cross(e0, e1);
 
 				float brightness = getBrightness(LIGHTS, planeNorm, point_world, ray);
-				int shadows = inShadow(obj, LIGHTS, point_world, ray, c);
+				// hard shadows
+				if (SHADOW_MODE == 2)
+				{
+					int shadows = inShadow(obj, LIGHTS, point_world, ray, c);
+					if (shadows == 1)
+					{
+						brightness = 0.2f;
+					}
+					// float darkness = (shadows / LIGHTS.size()) * 1.0f;
+					// brightness -= darkness;
+				}
+				// soft shadows
+				else if (SHADOW_MODE == 3)
+				{
+					float totalShift = 0.1f;
+					vec3 shift = totalShift * normalize(planeNorm);
+					int shadows = 0;
 
-				brightness -= shadows * 0.3f;
+					shadows += inShadow(obj, LIGHTS, point_world + shift, ray, c);
+					shadows += inShadow(obj, LIGHTS, point_world - shift, ray, c);
+					shadows += inShadow(obj, LIGHTS, point_world, ray, c);
+
+					brightness -= (shadows * 0.2f);
+				}
 				Colour col = Colour(triangle.colour.red, triangle.colour.green, triangle.colour.blue, brightness);
 				closest = RayTriangleIntersection(point_world, t, triangle, col);
 			}
@@ -145,13 +160,15 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 	return closest;
 }
 
-void drawRaytrace(ObjContent obj)
+void drawRaytrace(ObjContent obj, int mode)
 {
 	vec3 a = vec3(-0.884011, 5.219334, -2.517968);
 	vec3 b = vec3(0.415989, 5.218497, -3.567968);
 	vector<vec3> empty;
 	LIGHTS = empty;
+	SHADOW_MODE = mode;
 	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
+	// LIGHTS.push_back(vec3(0, 1, 1));
 	// LIGHTS.push_back(CAMERA_POS);
 	for (int x = 0; x <= WIDTH; x++)
 	{

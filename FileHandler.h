@@ -16,9 +16,10 @@ using namespace glm;
 
 class PpmContent
 {
+private:
 public:
 	PpmContent() {}
-	std::vector<vector<uint32_t>> image;
+	std::vector<vector<Colour>> image;
 	int col = 0;
 	int row = 0;
 };
@@ -44,9 +45,9 @@ public:
 
 PpmContent ppmRead(string filename)
 {
-	char red;
-	char green;
-	char blue;
+	uint8_t red;
+	uint8_t green;
+	uint8_t blue;
 	string line;
 	PpmContent ppm;
 	std::ifstream in(filename, std::ios::in);
@@ -70,15 +71,20 @@ PpmContent ppmRead(string filename)
 
 	for (int i = 0; i < ppm.row; i++)
 	{
-		vector<uint32_t> row;
+		vector<Colour> row;
 		for (int j = 0; j < ppm.col; j++)
 		{
 			in >> red;
 			in >> green;
 			in >> blue;
-			uint32_t pixel = (255 << 24) + (red << 16) + (green << 8) + blue;
-			row.push_back(pixel);
+			// printf("r=%i,g=%i,b=%i\n", red, green, blue);
+			Colour col = Colour(red, green, blue);
+
+			// cout << col << std::endl;
+			// uint32_t pixel = (255 << 24) + (uint(red) << 16) + (uint(green) << 8) + uint(blue);
+			row.push_back(col);
 		}
+
 		ppm.image.push_back(row);
 	}
 
