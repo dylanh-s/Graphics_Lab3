@@ -9,12 +9,12 @@ using namespace glm;
 #define HEIGHT 500
 #define DELTA 1
 #define THETA 0.02
-#define FOCAL_LENGTH 250.0
+#define FOCAL_LENGTH HEIGHT / 2
 
 int w = WIDTH / 2;
 int h = HEIGHT / 2;
 
-vec3 CAMERA_POS(0, 3, 5);
+vec3 CAMERA_POS(0, 3, 3);
 mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 

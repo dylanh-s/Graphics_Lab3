@@ -34,7 +34,7 @@ int inShadow(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 
 			float u = possibleSolution.y;
 			float v = possibleSolution.z;
 			// t,u,v is valid
-			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.3f && c != triangleIndex)
+			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.4f && c != triangleIndex)
 			{
 				if (t < (distanceToLight) && (abs(t - distanceToLight) > 0.01f))
 				{
@@ -128,6 +128,10 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 				vec3 planeNorm = cross(e0, e1);
 
 				float brightness = getBrightness(LIGHTS, planeNorm, point_world, ray);
+				if (brightness > 1.0f)
+				{
+					brightness = 1.0f;
+				}
 				// hard shadows
 				if (SHADOW_MODE == 2)
 				{
@@ -136,21 +140,44 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 					{
 						brightness = 0.2f;
 					}
-					// float darkness = (shadows / LIGHTS.size()) * 1.0f;
-					// brightness -= darkness;
 				}
 				// soft shadows
 				else if (SHADOW_MODE == 3)
 				{
-					float totalShift = 0.1f;
+					float totalShift = 0.2f;
 					vec3 shift = totalShift * normalize(planeNorm);
 					int shadows = 0;
-
 					shadows += inShadow(obj, LIGHTS, point_world + shift, ray, c);
 					shadows += inShadow(obj, LIGHTS, point_world - shift, ray, c);
 					shadows += inShadow(obj, LIGHTS, point_world, ray, c);
+					// all levels in shade
+					float shadeProportion = 0.0f;
+					if (shadows == 3)
+					{
+						// brightness -= (shadows * 0.2f);
+						shadeProportion = 1.0f;
+					}
+					// no levels in shade (dont change brightness)
+					else if (shadows == 0)
+					{
+						shadeProportion = 0.0f;
+					}
+					// some levels in shade
+					else
+					{
+						float thisShift = -1.0f * totalShift;
+						// increment shift until shadows = 0
+						while (shadows >= 1)
+						{
+							thisShift += 0.02f;
 
-					brightness -= (shadows * 0.2f);
+							shadows = inShadow(obj, LIGHTS, point_world + (thisShift * normalize(planeNorm)), ray, c);
+						}
+						// find value of shade between 0 -> light and 1 -> dark
+						shadeProportion = (thisShift + totalShift) / (totalShift * 2.0f);
+					}
+					// TODO this can be tuned to be prettier
+					brightness -= pow(shadeProportion, 1.5f);
 				}
 				Colour col = Colour(triangle.colour.red, triangle.colour.green, triangle.colour.blue, brightness);
 				closest = RayTriangleIntersection(point_world, t, triangle, col);
@@ -158,6 +185,14 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 		}
 	}
 	return closest;
+}
+
+vec3 int32ToVec3(uint32_t rgb)
+{
+	int r = (rgb >> 16) & 0xFF;
+	int g = (rgb >> 8) & 0xFF;
+	int b = rgb & 0xFF;
+	return vec3(r, g, b);
 }
 
 void drawRaytrace(ObjContent obj, int mode)
@@ -168,7 +203,7 @@ void drawRaytrace(ObjContent obj, int mode)
 	LIGHTS = empty;
 	SHADOW_MODE = mode;
 	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
-	// LIGHTS.push_back(vec3(0, 1, 1));
+	LIGHTS.push_back(vec3(0, 1, 1));
 	// LIGHTS.push_back(CAMERA_POS);
 	for (int x = 0; x <= WIDTH; x++)
 	{
@@ -183,6 +218,65 @@ void drawRaytrace(ObjContent obj, int mode)
 			if (intersection.distanceFromCamera < INFINITY)
 			{
 				window.setPixelColour(x, y, -0.5, intersection.colour.pack());
+			}
+		}
+	}
+}
+void drawRaytraceWithAA(ObjContent obj, int mode)
+{
+
+	vector<vec2> alias_pattern;
+	// corners + middle
+	alias_pattern.push_back(vec2(0.0f, 0.0f));
+	alias_pattern.push_back(vec2(0.0f, 0.0f));
+	alias_pattern.push_back(vec2(0.5f, 0.0f));
+	alias_pattern.push_back(vec2(-0.5f, 0.0f));
+	alias_pattern.push_back(vec2(0.0f, 0.5f));
+	alias_pattern.push_back(vec2(0.0f, -0.5f));
+	// float foo = 10.0f;
+	// alias_pattern.push_back(vec2(2.0f / foo, 2.0f / foo));
+	// alias_pattern.push_back(vec2(7.0f / foo, 1.0f / foo));
+	// alias_pattern.push_back(vec2(3.0f / foo, 7.0f / foo));
+	// alias_pattern.push_back(vec2(8.0f / foo, 6.0f / foo));
+
+	vec3 a = vec3(-0.884011, 5.219334, -2.517968);
+	vec3 b = vec3(0.415989, 5.218497, -3.567968);
+	vector<vec3> empty;
+	LIGHTS = empty;
+	SHADOW_MODE = mode;
+	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
+
+	for (int x = 0; x <= WIDTH; x++)
+	{
+		for (int y = 0; y <= HEIGHT; y++)
+		{
+			float xp = -(x - w);
+			float yp = (y - h);
+			vector<Colour> colours;
+			vec3 ray;
+			RayTriangleIntersection intersection;
+			// for each subpixel in the pattern
+			for (int a = 0; a < alias_pattern.size(); a++)
+			{
+				// get ray and find colour
+				ray = vec3(xp + alias_pattern.at(a).x, yp + alias_pattern.at(a).y, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
+				ray = glm::normalize(ray);
+				intersection = getClosestIntersection(obj, ray);
+				if (intersection.distanceFromCamera < INFINITY)
+				{
+					colours.push_back(intersection.colour);
+				}
+			}
+			// get average of all colours
+			if (colours.size() > 0)
+			{
+				Colour avgCol = colours.at(0);
+				for (int i = 1; i < colours.size(); i++)
+				{
+					Colour avgCol_prime = avgCol.averageWith(colours.at(i));
+					avgCol = avgCol_prime;
+				}
+				window.setPixelColour(x, y, -0.5, avgCol.pack());
 			}
 		}
 	}

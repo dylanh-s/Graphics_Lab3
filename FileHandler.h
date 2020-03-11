@@ -78,13 +78,12 @@ PpmContent ppmRead(string filename)
 			in >> green;
 			in >> blue;
 			// printf("r=%i,g=%i,b=%i\n", red, green, blue);
-			Colour col = Colour(red, green, blue);
+			Colour colour = Colour(red, green, blue);
 
 			// cout << col << std::endl;
 			// uint32_t pixel = (255 << 24) + (uint(red) << 16) + (uint(green) << 8) + uint(blue);
-			row.push_back(col);
+			row.push_back(colour);
 		}
-
 		ppm.image.push_back(row);
 	}
 
@@ -163,8 +162,10 @@ ObjContent objRead(string filename)
 			else if (line.substr(0, 2) == "f ")
 			{
 				int A, B, C; //to store vertex indices
+				// int At, Bt, Ct; //to store vertex indices
 				const char *chh = line.c_str();
 				sscanf(chh, "f %i/ %i/ %i/", &A, &B, &C); //here it reads the line starting with f and store the corresponding values in the variables
+				// sscanf(chh, "f %i/%i %i/%i %i/%i", &A, &At, &B, &Bt, &C, &Ct); //here it reads the line starting with f and store the corresponding values in the variables
 				A--;
 				B--;
 				C--;

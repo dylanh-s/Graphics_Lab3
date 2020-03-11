@@ -22,7 +22,7 @@ CanvasPoint projectPoint(vec3 p)
 
 CanvasTriangle projectTriangle(ModelTriangle t)
 {
-	return(CanvasTriangle(projectPoint(t.vertices[0]), projectPoint(t.vertices[1]), projectPoint(t.vertices[2]), t.colour));
+	return (CanvasTriangle(projectPoint(t.vertices[0]), projectPoint(t.vertices[1]), projectPoint(t.vertices[2]), t.colour));
 }
 
 std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end)

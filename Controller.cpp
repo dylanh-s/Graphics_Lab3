@@ -4,7 +4,7 @@
 using namespace std;
 using namespace glm;
 
-int MODE = 2;
+int MODE = 3;
 
 void update();
 void draw(PpmContent ppm, ObjContent obj);
@@ -13,11 +13,13 @@ vector<double> interpolate(double from, double to, int numberOfValues);
 vector<vec3> interpolate3D(vec3 from, vec3 to, int numberOfValues);
 CanvasTriangle getRandomTriangle();
 void drawTexture(PpmContent ppm);
+
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
 	PpmContent ppm = ppmRead("texture.ppm");
 	ObjContent obj = objRead("cornell-box.obj");
+	// ObjContent obj = objRead("logo.obj");
 
 	while (true)
 	{
@@ -27,6 +29,7 @@ int main(int argc, char *argv[])
 		draw(ppm, obj);
 		// drawTexture(ppm);
 		window.renderFrame();
+		printf("frame\n");
 	}
 }
 
@@ -109,7 +112,7 @@ void drawTexture(PpmContent ppm)
 		for (int j = 0; j < ppm.row; j++)
 		{
 			// cout << ppm.image.at(j).at(i) << std::endl;
-			// window.setPixelColour(i, j, -0.5, ppm.image.at(j).at(i));
+			window.setPixelColour(i, j, -0.5, ppm.image.at(j).at(i).pack());
 		}
 	}
 }
@@ -132,7 +135,7 @@ void draw(PpmContent ppm, ObjContent obj)
 	else if (MODE == 3)
 	{
 		// soft shadows
-		drawRaytrace(obj, MODE);
+		drawRaytraceWithAA(obj, MODE);
 		// drawTexture(ppm);
 	}
 	else if (MODE == 4)
