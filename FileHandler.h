@@ -16,12 +16,12 @@ using namespace glm;
 
 class PpmContent
 {
-private:
 public:
 	PpmContent() {}
-	std::vector<vector<Colour>> image;
-	int col = 0;
-	int row = 0;
+	std::vector<std::vector<uint32_t>> image;
+	int width = 0;
+	int height = 0;
+	int colour = 0;
 };
 
 class ObjContent
@@ -43,11 +43,43 @@ public:
 	}
 };
 
+void ppmWrite(PpmContent ppm)
+{
+	char red;
+	char green;
+	char blue;
+	char data[3];
+	uint32_t colour;
+	std::ofstream out("testing.ppm", std::ios::out);
+	if (!out)
+	{
+		std::cerr << "Cannot open " << "texture_out.ppm" << std::endl;
+		exit(1);
+	}
+
+	out << "P6\n";
+	out << "# Created by Alex & Dylan\n";
+	out << to_string(ppm.width) << " " << to_string(ppm.height) << "\n";
+	out << to_string(ppm.colour) << "\n";
+	for (int i = 0; i < ppm.height; i++)
+	{
+		for (int j = 0; j < ppm.width; j++)
+		{
+			colour = ppm.image[i][j];
+			red = (char)((colour & 0x00FF0000) >> 16);
+			green = (char)((colour & 0x0000FF00) >> 8);
+			blue = (char)((colour & 0x000000FF));
+			out << red << green << blue;
+		}
+	}
+	out << " ";
+	out.close();
+}
 PpmContent ppmRead(string filename)
 {
-	uint8_t red;
-	uint8_t green;
-	uint8_t blue;
+	char red;
+	char green;
+	char blue;
 	string line;
 	PpmContent ppm;
 	std::ifstream in(filename, std::ios::in);
@@ -56,37 +88,31 @@ PpmContent ppmRead(string filename)
 		std::cerr << "Cannot open " << filename << std::endl;
 		exit(1);
 	}
-	std::getline(in, line);
-	// std::cout << line << std::endl;
-	std::getline(in, line);
-	// std::cout << line << std::endl;
-	in >> line;
-	ppm.col = std::stoi(line);
-	// std::cout << line << std::endl;
-	in >> line;
-	ppm.row = std::stoi(line);
-	// std::cout << line << std::endl;
-	in >> line;
-	// std::cout << line << std::endl;
 
-	for (int i = 0; i < ppm.row; i++)
+	std::getline(in, line);
+	std::getline(in, line);
+	in >> line;
+	ppm.width = std::stoi(line);
+	in >> line;
+	ppm.height = std::stoi(line);
+	in >> line;
+	ppm.colour = std::stoi(line);
+	std::getline(in, line);
+
+	for (int i = 0; i < ppm.height; i++)
 	{
-		vector<Colour> row;
-		for (int j = 0; j < ppm.col; j++)
+		vector<uint32_t> row;
+		for (int j = 0; j < ppm.width; j++)
 		{
-			in >> red;
-			in >> green;
-			in >> blue;
-			// printf("r=%i,g=%i,b=%i\n", red, green, blue);
-			Colour colour = Colour(red, green, blue);
-
-			// cout << col << std::endl;
-			// uint32_t pixel = (255 << 24) + (uint(red) << 16) + (uint(green) << 8) + uint(blue);
-			row.push_back(colour);
+			in.get(red);
+			in.get(green);
+			in.get(blue);
+			uint32_t pixel = (255 << 24) + (red << 16) + (green << 8) + blue;
+			row.push_back(pixel);
 		}
 		ppm.image.push_back(row);
 	}
-
+	in.close();
 	return ppm;
 }
 

@@ -125,4 +125,15 @@ void drawRaster(ObjContent obj)
 		drawFilledTriangle(projectTriangle(obj.faces.at(i)));
 	}
 }
+
+void drawTexture(PpmContent ppm)
+{
+	for (int i = 0; i < ppm.height; i++)
+	{
+		for (int j = 0; j < ppm.width; j++)
+		{
+			window.setPixelColour(j, i, 0, ppm.image[i][j]);
+		}
+	}
+}
 #endif

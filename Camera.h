@@ -34,7 +34,7 @@ void rotateCamera(float x, float y, float z)
 					   -sin(y), cos(y) * sin(x), cos(y) * cos(x)};
 }
 
-void focusCamera(vec3 p)
+void lookCamera(vec3 p)
 {
 	vec3 f = vec3(CAMERA_ROT[0][2], CAMERA_ROT[1][2], CAMERA_ROT[2][2]);
 	vec3 forward = glm::normalize(f - p);

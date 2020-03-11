@@ -18,6 +18,7 @@ int main(int argc, char *argv[])
 {
 	SDL_Event event;
 	PpmContent ppm = ppmRead("texture.ppm");
+	// ppmWrite(ppm);
 	ObjContent obj = objRead("cornell-box.obj");
 	// ObjContent obj = objRead("logo.obj");
 
@@ -26,10 +27,11 @@ int main(int argc, char *argv[])
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
-		draw(ppm, obj);
-		// drawTexture(ppm);
+		drawTexture(ppm);
+		// draw(ppm, obj);
 		window.renderFrame();
-		printf("frame\n");
+		// printf("%d\n", DrawingWindow::pixelBuffer[0]);
+		// printf("frame\n");
 	}
 }
 
@@ -105,18 +107,6 @@ void update()
 	// Function for performing animation (shifting artifacts or moving the camera)
 }
 
-void drawTexture(PpmContent ppm)
-{
-	for (int i = 0; i < ppm.col; i++)
-	{
-		for (int j = 0; j < ppm.row; j++)
-		{
-			// cout << ppm.image.at(j).at(i) << std::endl;
-			window.setPixelColour(i, j, -0.5, ppm.image.at(j).at(i).pack());
-		}
-	}
-}
-
 void draw(PpmContent ppm, ObjContent obj)
 {
 	if (MODE == 0)
@@ -136,13 +126,11 @@ void draw(PpmContent ppm, ObjContent obj)
 	{
 		// soft shadows
 		drawRaytraceWithAA(obj, MODE);
-		// drawTexture(ppm);
 	}
 	else if (MODE == 4)
 	{
 		// no shadows
 		drawRaytrace(obj, MODE);
-		// drawTexture(ppm);
 	}
 }
 
@@ -243,7 +231,7 @@ void handleEvent(SDL_Event event)
 		else if (event.key.keysym.sym == SDLK_l)
 		{
 			window.clearPixels();
-			focusCamera(vec3(0.415989, 5.218497, -3.567968));
+			lookCamera(vec3(0.415989, 5.218497, -3.567968));
 		}
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)
