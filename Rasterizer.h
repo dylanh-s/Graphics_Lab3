@@ -112,6 +112,8 @@ void drawFilledTriangle(CanvasTriangle tri)
 
 void drawFrame(ObjContent obj)
 {
+#pragma omp parallel
+#pragma omp for
 	for (uint i = 0; i < obj.faces.size(); i++)
 	{
 		drawStrokedTriangle(projectTriangle(obj.faces.at(i)));
@@ -120,6 +122,8 @@ void drawFrame(ObjContent obj)
 
 void drawRaster(ObjContent obj)
 {
+#pragma omp parallel
+#pragma omp for
 	for (uint i = 0; i < obj.faces.size(); i++)
 	{
 		drawFilledTriangle(projectTriangle(obj.faces.at(i)));

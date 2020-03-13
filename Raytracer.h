@@ -11,9 +11,12 @@ int SHADOW_MODE;
 RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray);
 void drawRaytraces(ObjContent obj);
 
-int inShadow(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
+int countShadows(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
 {
 	int lightsInShadowOf = 0;
+#pragma omp parallel
+#pragma omp for
+	// 18.07
 	for (int l = 0; l < lightSources.size(); l++)
 	{
 		vec3 shadowRay = lightSources.at(l) - pointInWorld;
@@ -51,6 +54,42 @@ int inShadow(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 
 	return lightsInShadowOf;
 }
 
+float getShadowProportionForSoftShadows(ObjContent obj, vector<vec3> lightSources, vec3 planeNormal, vec3 pointInWorld, vec3 ray, int triangleIndex)
+{
+	float totalShift = 0.1f;
+	vec3 shift = totalShift * normalize(planeNormal);
+	int shadows = 0;
+	// shift virtual plane up
+	shadows += countShadows(obj, LIGHTS, pointInWorld + shift, ray, triangleIndex);
+	// shift virtual plane down
+	shadows += countShadows(obj, LIGHTS, pointInWorld - shift, ray, triangleIndex);
+	shadows += countShadows(obj, LIGHTS, pointInWorld, ray, triangleIndex);
+	float shadeProportion = 0.0f;
+	// all levels in shade (lowest brightness)
+	if (shadows == (lightSources.size() * 3))
+	{
+		shadeProportion = 1.0f;
+	}
+	// no levels in shade (dont change brightness)
+	else if (shadows == 0)
+	{
+		shadeProportion = 0.0f;
+	}
+	// some levels in shade (calculate proportion of shadow)
+	else
+	{
+		float thisShift = -1.0f * totalShift;
+		// increment shift until shadows = 0
+		while (shadows >= 1)
+		{
+			thisShift += 0.02f;
+			shadows = countShadows(obj, LIGHTS, pointInWorld + (thisShift * normalize(planeNormal)), ray, triangleIndex);
+		}
+		// find value of shade between 0 -> light and 1 -> dark
+		shadeProportion = (thisShift + totalShift) / (totalShift * 2.0f);
+	}
+	return shadeProportion;
+}
 float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray)
 {
 	float brightnessIncrease;
@@ -102,6 +141,8 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 {
 	RayTriangleIntersection closest = RayTriangleIntersection();
 	closest.distanceFromCamera = INFINITY;
+#pragma omp parallel
+#pragma omp for
 	for (uint c = 0; c < obj.faces.size(); c++)
 	{
 		ModelTriangle triangle = obj.faces[c];
@@ -135,8 +176,8 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 				// hard shadows
 				if (SHADOW_MODE == 2)
 				{
-					int shadows = inShadow(obj, LIGHTS, point_world, ray, c);
-					if (shadows == 1)
+					int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
+					if (shadows == LIGHTS.size())
 					{
 						brightness = 0.2f;
 					}
@@ -144,40 +185,9 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 				// soft shadows
 				else if (SHADOW_MODE == 3)
 				{
-					float totalShift = 0.2f;
-					vec3 shift = totalShift * normalize(planeNorm);
-					int shadows = 0;
-					shadows += inShadow(obj, LIGHTS, point_world + shift, ray, c);
-					shadows += inShadow(obj, LIGHTS, point_world - shift, ray, c);
-					shadows += inShadow(obj, LIGHTS, point_world, ray, c);
-					// all levels in shade
-					float shadeProportion = 0.0f;
-					if (shadows == 3)
-					{
-						// brightness -= (shadows * 0.2f);
-						shadeProportion = 1.0f;
-					}
-					// no levels in shade (dont change brightness)
-					else if (shadows == 0)
-					{
-						shadeProportion = 0.0f;
-					}
-					// some levels in shade
-					else
-					{
-						float thisShift = -1.0f * totalShift;
-						// increment shift until shadows = 0
-						while (shadows >= 1)
-						{
-							thisShift += 0.02f;
-
-							shadows = inShadow(obj, LIGHTS, point_world + (thisShift * normalize(planeNorm)), ray, c);
-						}
-						// find value of shade between 0 -> light and 1 -> dark
-						shadeProportion = (thisShift + totalShift) / (totalShift * 2.0f);
-					}
+					float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
 					// TODO this can be tuned to be prettier
-					brightness -= pow(shadeProportion, 1.5f);
+					brightness -= pow(shadeProportion, 0.5f);
 				}
 				Colour col = Colour(triangle.colour.red, triangle.colour.green, triangle.colour.blue, brightness);
 				closest = RayTriangleIntersection(point_world, t, triangle, col);
@@ -204,7 +214,9 @@ void drawRaytrace(ObjContent obj, int mode)
 	SHADOW_MODE = mode;
 	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
 	LIGHTS.push_back(vec3(0, 1, 1));
-	// LIGHTS.push_back(CAMERA_POS);
+	LIGHTS.push_back(CAMERA_POS);
+#pragma omp parallel
+#pragma omp for
 	for (int x = 0; x <= WIDTH; x++)
 	{
 		for (int y = 0; y <= HEIGHT; y++)
@@ -228,7 +240,6 @@ void drawRaytraceWithAA(ObjContent obj, int mode)
 	vector<vec2> alias_pattern;
 	// corners + middle
 	alias_pattern.push_back(vec2(0.0f, 0.0f));
-	alias_pattern.push_back(vec2(0.0f, 0.0f));
 	alias_pattern.push_back(vec2(0.5f, 0.0f));
 	alias_pattern.push_back(vec2(-0.5f, 0.0f));
 	alias_pattern.push_back(vec2(0.0f, 0.5f));
@@ -245,7 +256,8 @@ void drawRaytraceWithAA(ObjContent obj, int mode)
 	LIGHTS = empty;
 	SHADOW_MODE = mode;
 	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
-
+#pragma omp parallel
+#pragma omp for
 	for (int x = 0; x <= WIDTH; x++)
 	{
 		for (int y = 0; y <= HEIGHT; y++)

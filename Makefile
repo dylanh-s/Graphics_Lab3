@@ -9,12 +9,13 @@ WINDOW_OBJECT = libs/sdw/DrawingWindow.o
 
 # Build settings
 COMPILER = g++
+COMPILER_CLANG = clang++
 COMPILER_OPTIONS = -c -pipe -Wall -std=c++11
 DEBUG_OPTIONS = -ggdb -g3
 FUSSY_OPTIONS = -Werror -pedantic
 SANITIZER_OPTIONS = -O1 -fsanitize=undefined -fsanitize=address -fno-omit-frame-pointer
 SPEEDY_OPTIONS = -Ofast -funsafe-math-optimizations -march=native
-LINKER_OPTIONS = 
+LINKER_OPTIONS =
 
 # Set up flags
 SDW_COMPILER_FLAGS := -I./libs/sdw
@@ -50,6 +51,12 @@ debug: window
 speedy: window
 	$(COMPILER) $(COMPILER_OPTIONS) $(SPEEDY_OPTIONS) -o $(OBJECT_FILE) $(SOURCE_FILE) $(SDL_COMPILER_FLAGS) $(SDW_COMPILER_FLAGS) $(GLM_COMPILER_FLAGS)
 	$(COMPILER) $(LINKER_OPTIONS) $(SPEEDY_OPTIONS) -o $(EXECUTABLE) $(OBJECT_FILE) $(SDL_LINKER_FLAGS) $(SDW_LINKER_FLAGS)
+	./$(EXECUTABLE)
+
+# Rule to build for high performance executable
+speedyaf: window
+	$(COMPILER_CLANG) -Xpreprocessor -fopenmp $(COMPILER_OPTIONS) $(SPEEDY_OPTIONS) -lomp -o  $(OBJECT_FILE) $(SOURCE_FILE) $(SDL_COMPILER_FLAGS) $(SDW_COMPILER_FLAGS) $(GLM_COMPILER_FLAGS)
+	$(COMPILER) -Xpreprocessor -fopenmp $(LINKER_OPTIONS) $(SPEEDY_OPTIONS) -lomp -o  $(EXECUTABLE) $(OBJECT_FILE) $(SDL_LINKER_FLAGS) $(SDW_LINKER_FLAGS)
 	./$(EXECUTABLE)
 
 # Rule for building the DisplayWindow

@@ -135,14 +135,18 @@ void draw(PpmContent ppm, ObjContent obj)
 	else if (MODE == 3)
 	{
 		// soft shadows
+		// and anti-aliasing
 		drawRaytraceWithAA(obj, MODE);
-		// drawTexture(ppm);
 	}
 	else if (MODE == 4)
 	{
 		// no shadows
 		drawRaytrace(obj, MODE);
-		// drawTexture(ppm);
+	}
+	else if (MODE == 69)
+	{
+		// no shadows
+		// ObjContentTexture objTex = objReadTexture("logo.obj");
 	}
 }
 
