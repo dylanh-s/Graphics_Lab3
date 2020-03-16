@@ -12,7 +12,6 @@ void handleEvent(SDL_Event event);
 vector<double> interpolate(double from, double to, int numberOfValues);
 vector<vec3> interpolate3D(vec3 from, vec3 to, int numberOfValues);
 CanvasTriangle getRandomTriangle();
-void drawTexture(PpmContent ppm);
 
 int main(int argc, char *argv[])
 {
@@ -22,16 +21,18 @@ int main(int argc, char *argv[])
 	ObjContent obj = objRead("cornell-box.obj");
 	// ObjContent obj = objRead("logo.obj");
 
+	int n = 1;
 	while (true)
 	{
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
-		drawTexture(ppm);
-		// draw(ppm, obj);
+		// drawTexture(ppm);
+		draw(ppm, obj);
 		window.renderFrame();
-		// printf("%d\n", DrawingWindow::pixelBuffer[0]);
-		// printf("frame\n");
+		if (n <= 3)
+			ppmWrite(ppm, n);
+		n++;
 	}
 }
 

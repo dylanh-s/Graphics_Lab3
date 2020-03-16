@@ -15,6 +15,19 @@
 using namespace std;
 using namespace glm;
 
+#define WIDTH 500
+#define HEIGHT 500
+#define DELTA 1
+#define THETA 0.02
+#define FOCAL_LENGTH HEIGHT / 2
+
+int w = WIDTH / 2;
+int h = HEIGHT / 2;
+
+vec3 CAMERA_POS(0, 3, 3);
+mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
+DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
+
 class PpmContent
 {
 public:
@@ -58,14 +71,14 @@ public:
 	}
 };
 
-void ppmWrite(PpmContent ppm)
+void ppmWrite(PpmContent ppm, int n)
 {
 	char red;
 	char green;
 	char blue;
-	char data[3];
 	uint32_t colour;
-	std::ofstream out("testing.ppm", std::ios::out);
+	string filename = "./outputs/frame" + to_string(n) + ".ppm";
+	std::ofstream out(filename, std::ios::out);
 	if (!out)
 	{
 		std::cerr << "Cannot open " << "texture_out.ppm" << std::endl;
@@ -80,7 +93,8 @@ void ppmWrite(PpmContent ppm)
 	{
 		for (int j = 0; j < ppm.width; j++)
 		{
-			colour = ppm.image[i][j];
+			// colour = ppm.image[i][j];
+			colour = window.pixelBuffer[WIDTH*i + j];
 			red = (char)((colour & 0x00FF0000) >> 16);
 			green = (char)((colour & 0x0000FF00) >> 8);
 			blue = (char)((colour & 0x000000FF));
