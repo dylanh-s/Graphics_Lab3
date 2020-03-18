@@ -4,10 +4,10 @@
 using namespace std;
 using namespace glm;
 
-int MODE = 3;
+int MODE = 2;
 
 void update();
-void draw(PpmContent ppm, ObjContent obj);
+void draw(PpmContent ppm, ObjContentTexture obj);
 void handleEvent(SDL_Event event);
 vector<double> interpolate(double from, double to, int numberOfValues);
 vector<vec3> interpolate3D(vec3 from, vec3 to, int numberOfValues);
@@ -16,8 +16,9 @@ CanvasTriangle getRandomTriangle();
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
-	PpmContent ppm = ppmRead("texture.ppm");
-	ObjContent obj = objRead("cornell-box.obj");
+	PpmContent ppm = ppmRead("simon.ppm");
+	// printf("asdsasdf");
+	ObjContentTexture obj = objReadTexture("logo.obj");
 	// ObjContent obj = objRead("logo.obj");
 
 	int n = 1;
@@ -32,6 +33,7 @@ int main(int argc, char *argv[])
 		if (n <= 3)
 			ppmWrite(ppm, n);
 		n++;
+		printf("frame\n");
 	}
 }
 
@@ -107,35 +109,36 @@ void update()
 	// Function for performing animation (shifting artifacts or moving the camera)
 }
 
-void draw(PpmContent ppm, ObjContent obj)
+void draw(PpmContent ppm, ObjContentTexture obj)
 {
 	if (MODE == 0)
 	{
-		drawFrame(obj);
+		// drawFrame(obj);
 	}
 	else if (MODE == 1)
 	{
-		drawRaster(obj);
+		// drawRaster(obj);
 	}
 	else if (MODE == 2)
 	{
 		// solid shadows
-		drawRaytrace(obj, MODE);
+		drawRaytrace(obj, ppm, MODE);
 	}
 	else if (MODE == 3)
 	{
 		// soft shadows
 		// and anti-aliasing
-		drawRaytraceWithAA(obj, MODE);
+		drawRaytraceWithAA(obj, ppm, MODE);
 	}
 	else if (MODE == 4)
 	{
 		// no shadows
-		drawRaytrace(obj, MODE);
+		drawRaytrace(obj, ppm, MODE);
 	}
 	else if (MODE == 69)
 	{
 		// no shadows
+		drawRaytrace(obj, ppm, MODE);
 		// ObjContentTexture objTex = objReadTexture("logo.obj");
 	}
 }

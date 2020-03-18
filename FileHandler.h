@@ -17,6 +17,8 @@ using namespace glm;
 
 #define WIDTH 500
 #define HEIGHT 500
+#define PPM_WIDTH 166
+#define PPM_HEIGHT 220
 #define DELTA 1
 #define THETA 0.02
 #define FOCAL_LENGTH HEIGHT / 2
@@ -24,7 +26,7 @@ using namespace glm;
 int w = WIDTH / 2;
 int h = HEIGHT / 2;
 
-vec3 CAMERA_POS(0, 3, 3);
+vec3 CAMERA_POS(200, 200, 400);
 mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
@@ -81,7 +83,8 @@ void ppmWrite(PpmContent ppm, int n)
 	std::ofstream out(filename, std::ios::out);
 	if (!out)
 	{
-		std::cerr << "Cannot open " << "texture_out.ppm" << std::endl;
+		std::cerr << "Cannot open "
+				  << "texture_out.ppm" << std::endl;
 		exit(1);
 	}
 
@@ -94,7 +97,7 @@ void ppmWrite(PpmContent ppm, int n)
 		for (int j = 0; j < ppm.width; j++)
 		{
 			// colour = ppm.image[i][j];
-			colour = window.pixelBuffer[WIDTH*i + j];
+			colour = window.pixelBuffer[WIDTH * i + j];
 			red = (char)((colour & 0x00FF0000) >> 16);
 			green = (char)((colour & 0x0000FF00) >> 8);
 			blue = (char)((colour & 0x000000FF));
@@ -119,7 +122,7 @@ PpmContent ppmRead(string filename)
 	}
 
 	std::getline(in, line);
-	std::getline(in, line);
+	// std::getline(in, line);
 	in >> line;
 	ppm.width = std::stoi(line);
 	in >> line;
@@ -224,7 +227,7 @@ ObjContentTexture objReadTexture(string filename)
 			{
 				string *stuff = split(line, ' ');
 				string mtlFname = stuff[1];
-				currentTextureFname = getTextureFileName(mtlFname);
+				// currentTextureFname = getTextureFileName(mtlFname);
 			}
 			else if (line.substr(0, 2) == "v ")
 			{
