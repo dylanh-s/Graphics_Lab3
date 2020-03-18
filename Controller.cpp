@@ -17,7 +17,6 @@ int main(int argc, char *argv[])
 {
 	SDL_Event event;
 	PpmContent ppm = ppmRead("texture.ppm");
-	// ppmWrite(ppm);
 	ObjContent obj = objRead("cornell-box.obj");
 	// ObjContent obj = objRead("logo.obj");
 
