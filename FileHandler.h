@@ -81,7 +81,8 @@ void ppmWrite(PpmContent ppm, int n)
 	std::ofstream out(filename, std::ios::out);
 	if (!out)
 	{
-		std::cerr << "Cannot open " << "texture_out.ppm" << std::endl;
+		std::cerr << "Cannot open "
+				  << "texture_out.ppm" << std::endl;
 		exit(1);
 	}
 
@@ -94,7 +95,7 @@ void ppmWrite(PpmContent ppm, int n)
 		for (int j = 0; j < ppm.width; j++)
 		{
 			// colour = ppm.image[i][j];
-			colour = window.pixelBuffer[WIDTH*i + j];
+			colour = window.pixelBuffer[WIDTH * i + j];
 			red = (char)((colour & 0x00FF0000) >> 16);
 			green = (char)((colour & 0x0000FF00) >> 8);
 			blue = (char)((colour & 0x000000FF));
@@ -175,6 +176,12 @@ ObjContent populatePalette(string filename)
 				int g = 255 * stod(stuff[2]);
 				int b = 255 * stod(stuff[3]);
 				content.addColour(Colour(r, g, b), key);
+			}
+			else if (line.substr(0, 2) == "Re")
+			{
+				string *stuff = split(line, ' ');
+				float re = stof(stuff[1]);
+				content.palette.at(key).setReflectivity(re);
 			}
 		}
 	}

@@ -4,7 +4,7 @@
 using namespace std;
 using namespace glm;
 
-int MODE = 3;
+int MODE = 2;
 
 void update();
 void draw(PpmContent ppm, ObjContent obj);
@@ -32,6 +32,7 @@ int main(int argc, char *argv[])
 		if (n <= 3)
 			ppmWrite(ppm, n);
 		n++;
+		printf("frame\n");
 	}
 }
 

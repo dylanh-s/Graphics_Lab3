@@ -90,6 +90,16 @@ float getShadowProportionForSoftShadows(ObjContent obj, vector<vec3> lightSource
 	}
 	return shadeProportion;
 }
+
+vec3 getReflectedRay(vec3 planeNormal, vec3 viewRay)
+{
+	vec3 normal = normalize(planeNormal);
+
+	// vec3 viewRay = (point_world - CAMERA_POS) * glm::inverse(CAMERA_ROT);
+	vec3 reflection = viewRay - (2.0f * normal * (dot(viewRay, normal)));
+	return reflection;
+}
+
 float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray)
 {
 	float brightnessIncrease;
@@ -137,10 +147,15 @@ float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_w
 	// brightness = dot(reflection,ray)
 }
 
-RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
+RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray, int ray_bounces_remaining)
 {
 	RayTriangleIntersection closest = RayTriangleIntersection();
 	closest.distanceFromCamera = INFINITY;
+
+	if (ray_bounces_remaining == 0)
+	{
+		return RayTriangleIntersection(vec3(1, 1, 1), 1, obj.faces[0], Colour(0, 0, 0));
+	}
 #pragma omp parallel
 #pragma omp for
 	for (uint c = 0; c < obj.faces.size(); c++)
@@ -168,28 +183,41 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 
 				vec3 planeNorm = cross(e0, e1);
 
+				Colour col;
 				float brightness = getBrightness(LIGHTS, planeNorm, point_world, ray);
-				if (brightness > 1.0f)
+
+				if (triangle.colour.reflectivity > 0.01f)
 				{
-					brightness = 1.0f;
+					vec3 reflected_ray = getReflectedRay(planeNorm, ray);
+					RayTriangleIntersection intersection = getClosestIntersection(obj, reflected_ray, ray_bounces_remaining - 1);
+					intersection.colour.setBrightness(triangle.colour.reflectivity * intersection.colour.brightness);
+					col = intersection.colour;
+					// cout << col << endl;
 				}
-				// hard shadows
-				if (SHADOW_MODE == 2)
+				else
 				{
-					int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
-					if (shadows == LIGHTS.size())
+					if (brightness > 1.0f)
 					{
-						brightness = 0.2f;
+						brightness = 1.0f;
 					}
+					// hard shadows
+					if (SHADOW_MODE == 2)
+					{
+						int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
+						if (shadows == LIGHTS.size())
+						{
+							brightness = 0.2f;
+						}
+					}
+					// soft shadows
+					else if (SHADOW_MODE == 3)
+					{
+						float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
+						// TODO this can be tuned to be prettier
+						brightness -= pow(shadeProportion, 0.5f);
+					}
+					col = Colour(triangle.colour.red, triangle.colour.green, triangle.colour.blue, brightness);
 				}
-				// soft shadows
-				else if (SHADOW_MODE == 3)
-				{
-					float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
-					// TODO this can be tuned to be prettier
-					brightness -= pow(shadeProportion, 0.5f);
-				}
-				Colour col = Colour(triangle.colour.red, triangle.colour.green, triangle.colour.blue, brightness);
 				closest = RayTriangleIntersection(point_world, t, triangle, col);
 			}
 		}
@@ -213,8 +241,8 @@ void drawRaytrace(ObjContent obj, int mode)
 	LIGHTS = empty;
 	SHADOW_MODE = mode;
 	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
-	LIGHTS.push_back(vec3(0, 1, 1));
-	LIGHTS.push_back(CAMERA_POS);
+	// LIGHTS.push_back(vec3(0, 1, 1));
+	// LIGHTS.push_back(CAMERA_POS);
 #pragma omp parallel
 #pragma omp for
 	for (int x = 0; x <= WIDTH; x++)
@@ -226,7 +254,7 @@ void drawRaytrace(ObjContent obj, int mode)
 			float yp = (y - h);
 			vec3 ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
 			ray = glm::normalize(ray);
-			RayTriangleIntersection intersection = getClosestIntersection(obj, ray);
+			RayTriangleIntersection intersection = getClosestIntersection(obj, ray, 3);
 			if (intersection.distanceFromCamera < INFINITY)
 			{
 				window.setPixelColour(x, y, -0.5, intersection.colour.pack());
@@ -273,7 +301,7 @@ void drawRaytraceWithAA(ObjContent obj, int mode)
 				// get ray and find colour
 				ray = vec3(xp + alias_pattern.at(a).x, yp + alias_pattern.at(a).y, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
 				ray = glm::normalize(ray);
-				intersection = getClosestIntersection(obj, ray);
+				intersection = getClosestIntersection(obj, ray, 3);
 				if (intersection.distanceFromCamera < INFINITY)
 				{
 					colours.push_back(intersection.colour);

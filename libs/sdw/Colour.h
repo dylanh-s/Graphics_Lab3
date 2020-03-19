@@ -13,6 +13,7 @@ public:
   int green;
   int blue;
   float brightness;
+  float reflectivity;
 
   Colour()
   {
@@ -66,6 +67,14 @@ public:
     int g = (green * green + col2.green * col2.green) / 2;
     int b = (blue * blue + col2.blue * col2.blue) / 2;
     return Colour(sqrt(r), sqrt(g), sqrt(b), bri);
+  }
+  void setReflectivity(float re)
+  {
+    reflectivity = re;
+  }
+  void setBrightness(float bri)
+  {
+    brightness = bri;
   }
 
   uint32_t pack()
