@@ -13,7 +13,9 @@ public:
   int green;
   int blue;
   float brightness;
-  float reflectivity;
+  // mirrorness = reflectivity
+  float mirrorness;
+  float refractivity;
 
   Colour()
   {
@@ -68,9 +70,13 @@ public:
     int b = (blue * blue + col2.blue * col2.blue) / 2;
     return Colour(sqrt(r), sqrt(g), sqrt(b), bri);
   }
-  void setReflectivity(float re)
+  void setMirrorness(float mi)
   {
-    reflectivity = re;
+    mirrorness = mi;
+  }
+  void setRefractivity(float re)
+  {
+    refractivity = re;
   }
   void setBrightness(float bri)
   {

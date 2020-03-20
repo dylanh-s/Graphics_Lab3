@@ -177,11 +177,17 @@ ObjContent populatePalette(string filename)
 				int b = 255 * stod(stuff[3]);
 				content.addColour(Colour(r, g, b), key);
 			}
-			else if (line.substr(0, 2) == "Re")
+			else if (line.substr(0, 3) == "Mir")
+			{
+				string *stuff = split(line, ' ');
+				float mi = stof(stuff[1]);
+				content.palette.at(key).setMirrorness(mi);
+			}
+			else if (line.substr(0, 3) == "Ref")
 			{
 				string *stuff = split(line, ' ');
 				float re = stof(stuff[1]);
-				content.palette.at(key).setReflectivity(re);
+				content.palette.at(key).setRefractivity(re);
 			}
 		}
 	}
