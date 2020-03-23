@@ -16,7 +16,7 @@ CanvasTriangle getRandomTriangle();
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
-	PpmContent ppm = ppmRead("texture.ppm");
+	PpmContent ppm = ppmRead("./outputs/frame1.ppm");
 	ObjContent obj = objRead("cornell-box.obj");
 	// ObjContent obj = objRead("logo.obj");
 
@@ -26,11 +26,11 @@ int main(int argc, char *argv[])
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
-		// drawTexture(ppm);
-		draw(ppm, obj);
+		drawTexture(ppm);
+		// draw(ppm, obj);
 		window.renderFrame();
 		if (n <= 3)
-			ppmWrite(ppm, n);
+			ppmWrite(n);
 		n++;
 		printf("frame\n");
 	}

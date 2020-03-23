@@ -71,7 +71,7 @@ public:
 	}
 };
 
-void ppmWrite(PpmContent ppm, int n)
+void ppmWrite(int n)
 {
 	char red;
 	char green;
@@ -88,13 +88,12 @@ void ppmWrite(PpmContent ppm, int n)
 
 	out << "P6\n";
 	out << "# Created by Alex & Dylan\n";
-	out << to_string(ppm.width) << " " << to_string(ppm.height) << "\n";
-	out << to_string(ppm.colour) << "\n";
-	for (int i = 0; i < ppm.height; i++)
+	out << to_string(WIDTH) << " " << to_string(HEIGHT) << "\n";
+	out << "255\n";
+	for (int i = 0; i < HEIGHT; i++)
 	{
-		for (int j = 0; j < ppm.width; j++)
+		for (int j = 0; j < WIDTH; j++)
 		{
-			// colour = ppm.image[i][j];
 			colour = window.pixelBuffer[WIDTH * i + j];
 			red = (char)((colour & 0x00FF0000) >> 16);
 			green = (char)((colour & 0x0000FF00) >> 8);
