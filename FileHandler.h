@@ -76,9 +76,9 @@ void ppmWrite(int n)
 	char red;
 	char green;
 	char blue;
-	uint32_t colour;
+	uint32_t pixel;
 	string filename = "./outputs/frame" + to_string(n) + ".ppm";
-	std::ofstream out(filename, std::ios::out);
+	std::ofstream out(filename, std::ios::out | std::ios::binary);
 	if (!out)
 	{
 		std::cerr << "Cannot open "
@@ -94,24 +94,24 @@ void ppmWrite(int n)
 	{
 		for (int j = 0; j < WIDTH; j++)
 		{
-			colour = window.pixelBuffer[WIDTH * i + j];
-			red = (char)((colour & 0x00FF0000) >> 16);
-			green = (char)((colour & 0x0000FF00) >> 8);
-			blue = (char)((colour & 0x000000FF));
+			pixel = window.pixelBuffer[WIDTH * i + j];
+			red = char((pixel & 0x00FF0000) >> 16);
+			green = char((pixel & 0x0000FF00) >> 8);
+			blue = char((pixel & 0x000000FF));
 			out << red << green << blue;
 		}
 	}
-	out << " ";
 	out.close();
 }
+
 PpmContent ppmRead(string filename)
 {
-	char red;
-	char green;
-	char blue;
+	int red;
+	int green;
+	int blue;
 	string line;
 	PpmContent ppm;
-	std::ifstream in(filename, std::ios::in);
+	std::ifstream in(filename, std::ios::in | std::ios::binary);
 	if (!in)
 	{
 		std::cerr << "Cannot open " << filename << std::endl;
@@ -127,16 +127,15 @@ PpmContent ppmRead(string filename)
 	in >> line;
 	ppm.colour = std::stoi(line);
 	std::getline(in, line);
-
 	for (int i = 0; i < ppm.height; i++)
 	{
 		vector<uint32_t> row;
 		for (int j = 0; j < ppm.width; j++)
 		{
-			in.get(red);
-			in.get(green);
-			in.get(blue);
-			uint32_t pixel = (255 << 24) + (red << 16) + (green << 8) + blue;
+			red = int(in.get());
+			green = int(in.get());
+			blue = int(in.get());
+			uint32_t pixel = (int(255) << 24) + (int(red) << 16) + (int(green) << 8) + int(blue);
 			row.push_back(pixel);
 		}
 		ppm.image.push_back(row);
@@ -277,7 +276,7 @@ ObjContentTexture objReadTexture(string filename)
 ObjContent objRead(string filename)
 {
 
-	ObjContent toReturn = populatePalette("cornell-box.mtl");
+	ObjContent toReturn = populatePalette("./inputs/cornell-box.mtl");
 	vector<vec3> vertices;
 	vector<vec2> texturePoints;
 	string line;

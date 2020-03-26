@@ -17,7 +17,7 @@ int main(int argc, char *argv[])
 {
 	SDL_Event event;
 	PpmContent ppm = ppmRead("./outputs/frame1.ppm");
-	ObjContent obj = objRead("cornell-box.obj");
+	ObjContent obj = objRead("./inputs/cornell-box.obj");
 	// ObjContent obj = objRead("logo.obj");
 
 	int n = 1;
@@ -29,10 +29,10 @@ int main(int argc, char *argv[])
 		// drawTexture(ppm);
 		draw(ppm, obj);
 		window.renderFrame();
-		if (n <= 3)
+		if (n <= 1)
 			ppmWrite(n);
+		cout << "frame" << n << "\n";
 		n++;
-		printf("frame\n");
 	}
 }
 

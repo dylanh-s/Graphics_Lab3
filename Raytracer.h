@@ -12,13 +12,13 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray);
 void drawRaytraces(ObjContent obj);
 vec3 getReflectedRay(vec3 planeNormal, vec3 viewRay);
 
-int countShadows(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
+int countShadows(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, uint triangleIndex)
 {
 	int lightsInShadowOf = 0;
 #pragma omp parallel
 #pragma omp for
 	// 18.07
-	for (int l = 0; l < lightSources.size(); l++)
+	for (uint l = 0; l < lightSources.size(); l++)
 	{
 		vec3 shadowRay = lightSources.at(l) - pointInWorld;
 		// shadowRay = normalize(shadowRay);
@@ -59,7 +59,7 @@ float getShadowProportionForSoftShadows(ObjContent obj, vector<vec3> lightSource
 {
 	float totalShift = 0.1f;
 	vec3 shift = totalShift * normalize(planeNormal);
-	int shadows = 0;
+	uint shadows = 0;
 	// shift virtual plane up
 	shadows += countShadows(obj, LIGHTS, pointInWorld + shift, ray, triangleIndex);
 	// shift virtual plane down
@@ -152,8 +152,8 @@ vec3 getReflectedRay(vec3 planeNormal, vec3 viewRay)
 
 float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray)
 {
-	float brightnessIncrease;
-	for (int i = 0; i < lightSources.size(); i++)
+	float brightnessIncrease = 0.0f;
+	for (uint i = 0; i < lightSources.size(); i++)
 	{
 		brightnessIncrease = 0.0f;
 		vec3 lightVec = LIGHTS.at(i) - point_in_world;
@@ -270,7 +270,7 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray, vec3 st
 					// hard shadows
 					if (SHADOW_MODE == 2)
 					{
-						int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
+						uint shadows = countShadows(obj, LIGHTS, point_world, ray, c);
 						if (shadows == LIGHTS.size())
 						{
 							brightness = 0.2f;
@@ -363,7 +363,7 @@ void drawRaytraceWithAA(ObjContent obj, int mode)
 			vec3 ray;
 			RayTriangleIntersection intersection;
 			// for each subpixel in the pattern
-			for (int a = 0; a < alias_pattern.size(); a++)
+			for (uint a = 0; a < alias_pattern.size(); a++)
 			{
 				// get ray and find colour
 				ray = vec3(xp + alias_pattern.at(a).x, yp + alias_pattern.at(a).y, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
@@ -378,7 +378,7 @@ void drawRaytraceWithAA(ObjContent obj, int mode)
 			if (colours.size() > 0)
 			{
 				Colour avgCol = colours.at(0);
-				for (int i = 1; i < colours.size(); i++)
+				for (uint i = 1; i < colours.size(); i++)
 				{
 					Colour avgCol_prime = avgCol.averageWith(colours.at(i));
 					avgCol = avgCol_prime;
