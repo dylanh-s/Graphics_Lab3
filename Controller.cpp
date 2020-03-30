@@ -26,8 +26,8 @@ int main(int argc, char *argv[])
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
-		// drawTexture(ppm);
-		draw(ppm, obj);
+		drawTexture(ppm);
+		// draw(ppm, obj);
 		window.renderFrame();
 		if (n <= 1)
 			ppmWrite(n);
