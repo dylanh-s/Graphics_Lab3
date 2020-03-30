@@ -11,67 +11,71 @@
 #include <fstream>
 #include <vector>
 #include <unordered_map>
-
+#include <PpmContent.h>
 using namespace std;
 using namespace glm;
 
-#define WIDTH 500
-#define HEIGHT 500
+#define WIDTH 250
+#define HEIGHT 250
 #define PPM_WIDTH 166
 #define PPM_HEIGHT 220
-#define DELTA 1
-#define THETA 0.02
+#define DELTA 25
+#define THETA 0.1
 #define FOCAL_LENGTH HEIGHT / 2
 
 int w = WIDTH / 2;
 int h = HEIGHT / 2;
 
 vec3 CAMERA_POS(200, 200, 400);
+// vec3 CAMERA_POS(0, 3, 3);
 mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
-
-class PpmContent
-{
-public:
-	PpmContent() {}
-	std::vector<std::vector<uint32_t>> image;
-	int width = 0;
-	int height = 0;
-	int colour = 0;
-};
 
 class ObjContent
 {
 public:
 	ObjContent() {}
 	std::vector<ModelTriangle> faces;
-	std::unordered_map<std::string, Colour> palette;
+	std::vector<CanvasTriangle> textureTris;
+	std::unordered_map<std::string, Material> palette;
+	std::vector<PpmContent> ppms;
 	int max = 0;
 
 	void addFace(ModelTriangle face)
 	{
 		faces.push_back(face);
 	}
-
-	void addColour(Colour col, std::string name)
+	void addTextureTri(CanvasTriangle tex)
 	{
-		palette[name] = col;
+		textureTris.push_back(tex);
+	}
+
+	void addMaterial(Material mtl, std::string name)
+	{
+		palette[name] = mtl;
+	}
+	PpmContent *addPpm(PpmContent ppm)
+	{
+		ppms.push_back(ppm);
+		int index = ppms.size() - 1;
+		PpmContent *ptr = &ppms[index];
+		return ptr;
 	}
 };
 
-class ObjContentTexture
-{
-public:
-	ObjContentTexture() {}
-	std::vector<TextureTriangle> faces;
-	// std::unordered_map<std::string, Colour> palette;
-	// int max = 0;
+// class ObjContentTexture
+// {
+// public:
+// 	ObjContentTexture() {}
+// 	std::vector<TextureTriangle> faces;
+// 	// std::unordered_map<std::string, Colour> palette;
+// 	// int max = 0;
 
-	void addFace(TextureTriangle face)
-	{
-		faces.push_back(face);
-	}
-};
+// 	void addFace(TextureTriangle face)
+// 	{
+// 		faces.push_back(face);
+// 	}
+// };
 
 void ppmWrite(PpmContent ppm, int n)
 {
@@ -109,12 +113,12 @@ void ppmWrite(PpmContent ppm, int n)
 }
 PpmContent ppmRead(string filename)
 {
-	char red;
-	char green;
-	char blue;
+	int red;
+	int green;
+	int blue;
 	string line;
 	PpmContent ppm;
-	std::ifstream in(filename, std::ios::in);
+	std::ifstream in(filename, std::ios::in | std::ios::binary);
 	if (!in)
 	{
 		std::cerr << "Cannot open " << filename << std::endl;
@@ -130,16 +134,15 @@ PpmContent ppmRead(string filename)
 	in >> line;
 	ppm.colour = std::stoi(line);
 	std::getline(in, line);
-
 	for (int i = 0; i < ppm.height; i++)
 	{
 		vector<uint32_t> row;
 		for (int j = 0; j < ppm.width; j++)
 		{
-			in.get(red);
-			in.get(green);
-			in.get(blue);
-			uint32_t pixel = (255 << 24) + (red << 16) + (green << 8) + blue;
+			red = int(in.get());
+			green = int(in.get());
+			blue = int(in.get());
+			uint32_t pixel = (int(255) << 24) + (int(red) << 16) + (int(green) << 8) + int(blue);
 			row.push_back(pixel);
 		}
 		ppm.image.push_back(row);
@@ -151,9 +154,10 @@ PpmContent ppmRead(string filename)
 ObjContent populatePalette(string filename)
 {
 	ObjContent content;
+
 	ofstream myfile;
 	string line;
-	Colour currentCol = Colour(0, 0, 0);
+	Material currentMtl = Material("none");
 	std::ifstream in(filename, std::ios::in);
 	if (!in)
 	{
@@ -167,9 +171,21 @@ ObjContent populatePalette(string filename)
 		{
 			if (line.substr(0, 6) == "newmtl")
 			{
+				if (currentMtl.name != "none")
+				{
+					content.addMaterial(currentMtl, currentMtl.name);
+				}
 				string *stuff = split(line, ' ');
 				key = stuff[1];
-				currentCol = content.palette[key];
+				currentMtl = Material(key);
+			}
+			else if (line.substr(0, 2) == "Ka")
+			{
+				string *stuff = split(line, ' ');
+				int r = 255 * stod(stuff[1]);
+				int g = 255 * stod(stuff[2]);
+				int b = 255 * stod(stuff[3]);
+				currentMtl.setKaToColour(vec3(r, g, b));
 			}
 			else if (line.substr(0, 2) == "Kd")
 			{
@@ -177,47 +193,51 @@ ObjContent populatePalette(string filename)
 				int r = 255 * stod(stuff[1]);
 				int g = 255 * stod(stuff[2]);
 				int b = 255 * stod(stuff[3]);
-				content.addColour(Colour(r, g, b), key);
+				currentMtl.setKdToColour(vec3(r, g, b));
+			}
+			else if (line.substr(0, 2) == "Ks")
+			{
+				string *stuff = split(line, ' ');
+				int r = 255 * stod(stuff[1]);
+				int g = 255 * stod(stuff[2]);
+				int b = 255 * stod(stuff[3]);
+				currentMtl.setKsToColour(vec3(r, g, b));
+			}
+			else if (line.substr(0, 2) == "Ns")
+			{
+				string *stuff = split(line, ' ');
+				currentMtl.setSpecularExponent(stof(stuff[1]));
+			}
+			else if (line.substr(0, 6) == "map_Kd")
+			{
+				string *stuff = split(line, ' ');
+				PpmContent ppm = ppmRead(stuff[1]);
+				PpmContent *ptr = content.addPpm(ppm);
+				currentMtl.setKdToTexture(ptr);
 			}
 		}
 	}
+
+	content.addMaterial(currentMtl, currentMtl.name);
+	myfile.close();
 	return content;
 }
 
-string getTextureFileName(string filename)
-{
-	string line;
-	std::ifstream in(filename, std::ios::in);
-	if (!in)
-	{
-		std::cerr << "Cannot open " << filename << std::endl;
-		exit(1);
-	}
-	while (std::getline(in, line))
-	{
-		if (line.substr(0, 6) == "map_Kd ")
-		{
-			string *stuff = split(line, ' ');
-			return (stuff[1]);
-		}
-	}
-	return "";
-}
-
-ObjContentTexture objReadTexture(string filename)
+ObjContent objRead(string filename)
 {
 
-	ObjContentTexture toReturn;
+	ObjContent toReturn;
 	vector<vec3> vertices;
 	vector<TexturePoint> texturePoints;
 	string line;
-	string currentTextureFname = "";
+	Material currentMtl;
 	std::ifstream in(filename, std::ios::in);
 	if (!in)
 	{
 		std::cerr << "Cannot open " << filename << std::endl;
 		exit(1);
 	}
+	int n = 0;
 	while (std::getline(in, line))
 	{
 		//check v for vertices
@@ -227,7 +247,12 @@ ObjContentTexture objReadTexture(string filename)
 			{
 				string *stuff = split(line, ' ');
 				string mtlFname = stuff[1];
-				// currentTextureFname = getTextureFileName(mtlFname);
+				toReturn = populatePalette(mtlFname);
+			}
+			if (line.substr(0, 6) == "usemtl")
+			{
+				string *stuff = split(line, ' ');
+				currentMtl = toReturn.palette.at(stuff[1]);
 			}
 			else if (line.substr(0, 2) == "v ")
 			{
@@ -257,64 +282,15 @@ ObjContentTexture objReadTexture(string filename)
 				A--;
 				B--;
 				C--;
-				TextureTriangle t = TextureTriangle(vertices.at(A), vertices.at(B), vertices.at(C), texturePoints.at(At), texturePoints.at(Bt), texturePoints.at(Ct), currentTextureFname);
-				toReturn.addFace(t);
+				ModelTriangle tri = ModelTriangle(vertices.at(A), vertices.at(B), vertices.at(C), currentMtl);
+				CanvasTriangle tex_tri = CanvasTriangle(texturePoints.at(At), texturePoints.at(Bt), texturePoints.at(Ct));
+				toReturn.addTextureTri(tex_tri);
+				toReturn.addFace(tri);
 			}
 		}
+		n++;
 	}
 	return toReturn;
 }
 
-ObjContent objRead(string filename)
-{
-
-	ObjContent toReturn = populatePalette("cornell-box.mtl");
-	vector<vec3> vertices;
-	vector<vec2> texturePoints;
-	string line;
-	Colour currentCol = Colour(255, 255, 255);
-	std::ifstream in(filename, std::ios::in);
-	if (!in)
-	{
-		std::cerr << "Cannot open " << filename << std::endl;
-		exit(1);
-	}
-	while (std::getline(in, line))
-	{
-		//check v for vertices
-		if (line.size() > 4)
-		{
-			if (line.substr(0, 6) == "usemtl")
-			{
-				string *stuff = split(line, ' ');
-				string key = stuff[1];
-				//std::cout << key << std::endl;
-				currentCol = toReturn.palette[key];
-			}
-			else if (line.substr(0, 2) == "v ")
-			{
-				string *stuff = split(line, ' ');
-				double x = stod(stuff[1]);
-				double y = stod(stuff[2]);
-				double z = stod(stuff[3]);
-				vertices.push_back(vec3(x, y, z));
-			}
-			//check for faces
-			else if (line.substr(0, 2) == "f ")
-			{
-				int A, B, C; //to store vertex indices
-				const char *chh = line.c_str();
-				ModelTriangle t;
-				sscanf(chh, "f %i/ %i/ %i/", &A, &B, &C); //here it reads the line starting with f and store the corresponding values in the variables
-				A--;
-				B--;
-				C--;
-				t = ModelTriangle(vertices.at(A), vertices.at(B), vertices.at(C), currentCol);
-
-				toReturn.addFace(t);
-			}
-		}
-	}
-	return toReturn;
-}
 #endif

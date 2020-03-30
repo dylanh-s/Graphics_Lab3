@@ -8,8 +8,8 @@ using namespace glm;
 vector<vec3> LIGHTS;
 int SHADOW_MODE;
 
-RayTriangleIntersection getClosestIntersection(ObjContentTexture obj, PpmContent ppm, vec3 ray);
-void drawRaytraces(ObjContentTexture obj);
+RayTriangleIntersection getClosestIntersection(ObjContent obj, PpmContent ppm, vec3 ray);
+void drawRaytraces(ObjContent obj);
 
 vec3 uintToVec3(uint32_t rgb)
 {
@@ -35,7 +35,7 @@ Colour getCorrespondingTextureCol(float u, float v, PpmContent ppm, CanvasTriang
 	return Colour(col.x, col.y, col.z, 1.0f);
 }
 
-int countShadows(ObjContentTexture obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
+int countShadows(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
 {
 	int lightsInShadowOf = 0;
 #pragma omp parallel
@@ -48,7 +48,7 @@ int countShadows(ObjContentTexture obj, vector<vec3> lightSources, vec3 pointInW
 		bool inShadow = 0;
 		for (uint c = 0; c < obj.faces.size(); c++)
 		{
-			ModelTriangle triangle = ModelTriangle(obj.faces[c].vertices[0], obj.faces[c].vertices[1], obj.faces[c].vertices[2], Colour(255, 255, 255));
+			ModelTriangle triangle = ModelTriangle(obj.faces[c].vertices[0], obj.faces[c].vertices[1], obj.faces[c].vertices[2], Material());
 
 			vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
 			vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
@@ -78,7 +78,7 @@ int countShadows(ObjContentTexture obj, vector<vec3> lightSources, vec3 pointInW
 	return lightsInShadowOf;
 }
 
-float getShadowProportionForSoftShadows(ObjContentTexture obj, vector<vec3> lightSources, vec3 planeNormal, vec3 pointInWorld, vec3 ray, int triangleIndex)
+float getShadowProportionForSoftShadows(ObjContent obj, vector<vec3> lightSources, vec3 planeNormal, vec3 pointInWorld, vec3 ray, int triangleIndex)
 {
 	float totalShift = 0.1f;
 	vec3 shift = totalShift * normalize(planeNormal);
@@ -114,9 +114,75 @@ float getShadowProportionForSoftShadows(ObjContentTexture obj, vector<vec3> ligh
 	}
 	return shadeProportion;
 }
+
+vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray, vec3 Ka, vec3 Kd, vec3 Ks, float sExp)
+{
+	vec3 Ip = vec3(20.0, 20.0, 20.0); // intensity at point
+	vec3 Ia = vec3(0.05, 0.05, 0.05); // ambient intensity
+	vec3 I = vec3(1.0, 1.0, 1.0);	 // final intensity
+	for (int i = 0; i < lightSources.size(); i++)
+	{
+		vec3 lightVec = (LIGHTS.at(i) - point_in_world);
+		// float f = (1 / (4 * M_PI * length(lightVec) * length(lightVec)));
+
+		// float f = 9 / (M_PI * length(lightVec));
+		float f = 10 / length(lightVec);
+
+		// ambient
+		vec3 ambient = Ia * Ka;
+		// cout << "ambient" << ambient << endl;
+
+		// Lambert
+		vec3 normal = normalize(planeNormal);
+		float light_dot_normal = dot(normalize(lightVec), normal);
+		if (light_dot_normal < 0.0f)
+		{
+			normal *= -1.f;
+			light_dot_normal = dot(normalize(lightVec), normal);
+		}
+
+		vec3 lambert = f * Ip * Kd * light_dot_normal;
+		// cout << "lambert" << lambert << endl;
+
+		// Phong
+		vec3 flipRay = -1.0f * ray;
+		vec3 reflection = lightVec - (2.0f * (dot(lightVec, normalize(planeNormal)) * normalize(planeNormal)));
+		float reflection_dot_view = dot(normalize(reflection), normalize(flipRay));
+		vec3 phong;
+		if (reflection_dot_view < 0.0f)
+		{
+			phong = vec3(0.0f, 0.0f, 0.0f);
+		}
+		else
+		{
+			printf("%f\n", reflection_dot_view);
+			phong = f * Ip * Ks * pow(reflection_dot_view, sExp);
+		}
+		// cout << "phong" << phong << endl;
+
+		I = I * (ambient + lambert + phong);
+		if (I.x > 255.0f)
+		{
+			I.x = 255.0f;
+		}
+		if (I.y > 255.0f)
+		{
+			I.y = 255.0f;
+		}
+		if (I.z > 255.0f)
+		{
+			I.z = 255.0f;
+		}
+	}
+	return I;
+}
+
 float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray)
 {
 	float brightnessIncrease;
+	// f = 1/(4pi*d^2)
+	// vec3 I = Ia * Ka + (f * Ip * Kd(dot(lightVec,plane))) + f*Ip*Ks*dot(reflection,flipRay)^Ni
+
 	for (int i = 0; i < lightSources.size(); i++)
 	{
 		brightnessIncrease = 0.0f;
@@ -149,7 +215,6 @@ float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_w
 	// length is not between 0 and 1 so needs scaling. 1/(4pi*dist**2)
 
 	// incidence lighting
-	// distance & angle
 	// dot the normal and light but normalised (might need -ves)
 	// check between 0-1 float
 	// increm brightness again
@@ -161,7 +226,7 @@ float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_w
 	// brightness = dot(reflection,ray)
 }
 
-RayTriangleIntersection getClosestIntersection(ObjContentTexture obj, PpmContent ppm, vec3 ray)
+RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 {
 	RayTriangleIntersection closest = RayTriangleIntersection();
 	closest.distanceFromCamera = INFINITY;
@@ -169,7 +234,7 @@ RayTriangleIntersection getClosestIntersection(ObjContentTexture obj, PpmContent
 #pragma omp for
 	for (uint c = 0; c < obj.faces.size(); c++)
 	{
-		ModelTriangle triangle = ModelTriangle(obj.faces[c].vertices[0], obj.faces[c].vertices[1], obj.faces[c].vertices[2], Colour(255, 255, 255));
+		ModelTriangle triangle = obj.faces[c];
 
 		vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
 		vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
@@ -191,46 +256,45 @@ RayTriangleIntersection getClosestIntersection(ObjContentTexture obj, PpmContent
 				vec3 point_world = (u_tri + v_tri) + triangle.vertices[0];
 
 				vec3 planeNorm = cross(e0, e1);
-				Colour col;
-				float brightness = getBrightness(LIGHTS, planeNorm, point_world, ray);
-				if (brightness > 1.0f)
-				{
-					brightness = 1.0f;
-				}
+				vec3 Ka;
+				triangle.material.getKa(u, v, obj.textureTris[c], Ka);
+				vec3 Kd;
+				triangle.material.getKd(u, v, obj.textureTris[c], Kd);
+				vec3 Ks;
+				triangle.material.getKd(u, v, obj.textureTris[c], Ks);
+				float sExp = triangle.material.specularExponent;
+
+				float brightness = 1.0;
 				// hard shadows
 				// if (SHADOW_MODE == 69)
+				vec3 col = getColourOfPoint(LIGHTS, planeNorm, point_world, ray, Ka, Kd, Ks, sExp);
+				// cout << col << endl;
+				Colour pixelCol;
+				pixelCol = Colour(col.x, col.y, col.z, 1.0f);
+				// if (SHADOW_MODE == 2)
 				// {
-				CanvasPoint v0 = CanvasPoint(obj.faces[c].texturePoints[0].x, obj.faces[c].texturePoints[0].y);
-				CanvasPoint v1 = CanvasPoint(obj.faces[c].texturePoints[1].x, obj.faces[c].texturePoints[1].y);
-				CanvasPoint v2 = CanvasPoint(obj.faces[c].texturePoints[2].x, obj.faces[c].texturePoints[2].y);
-				CanvasTriangle texture_tri = CanvasTriangle(v0, v1, v2);
-				col = getCorrespondingTextureCol(u, v, ppm, texture_tri);
+				// 	int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
+				// 	if (shadows == LIGHTS.size())
+				// 	{
+				// 		pixelCol.brightness = 0.2f;
+				// 	}
 				// }
-				if (SHADOW_MODE == 2)
-				{
-					int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
-					if (shadows == LIGHTS.size())
-					{
-						brightness = 0.2f;
-					}
-					col = Colour(col.red, col.green, col.blue, brightness);
-				}
-				// soft shadows
-				else if (SHADOW_MODE == 3)
-				{
-					float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
-					// TODO this can be tuned to be prettier
-					brightness -= pow(shadeProportion, 0.5f);
-					col = Colour(col.red, col.green, col.blue, brightness);
-				}
-				closest = RayTriangleIntersection(point_world, t, triangle, col);
+				// // soft shadows
+				// else if (SHADOW_MODE == 3)
+				// {
+				// 	float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
+				// 	// TODO this can be tuned to be prettier
+				// 	brightness -= pow(shadeProportion, 0.5f);
+				// 	pixelCol.brightness = brightness;
+				// }
+				closest = RayTriangleIntersection(point_world, t, triangle, pixelCol);
 			}
 		}
 	}
 	return closest;
 }
 
-void drawRaytrace(ObjContentTexture obj, PpmContent ppm, int mode)
+void drawRaytrace(ObjContent obj, int mode)
 {
 	// vec3 a = vec3(-0.884011, 5.219334, -2.517968);
 	// vec3 b = vec3(0.415989, 5.218497, -3.567968);
@@ -253,7 +317,7 @@ void drawRaytrace(ObjContentTexture obj, PpmContent ppm, int mode)
 			float yp = (y - h);
 			vec3 ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
 			ray = glm::normalize(ray);
-			RayTriangleIntersection intersection = getClosestIntersection(obj, ppm, ray);
+			RayTriangleIntersection intersection = getClosestIntersection(obj, ray);
 			if (intersection.distanceFromCamera < INFINITY)
 			{
 				window.setPixelColour(x, y, -0.5, intersection.colour.pack());
@@ -261,7 +325,7 @@ void drawRaytrace(ObjContentTexture obj, PpmContent ppm, int mode)
 		}
 	}
 }
-void drawRaytraceWithAA(ObjContentTexture obj, PpmContent ppm, int mode)
+void drawRaytraceWithAA(ObjContent obj, int mode)
 {
 
 	vector<vec2> alias_pattern;
@@ -300,7 +364,7 @@ void drawRaytraceWithAA(ObjContentTexture obj, PpmContent ppm, int mode)
 				// get ray and find colour
 				ray = vec3(xp + alias_pattern.at(a).x, yp + alias_pattern.at(a).y, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
 				ray = glm::normalize(ray);
-				intersection = getClosestIntersection(obj, ppm, ray);
+				intersection = getClosestIntersection(obj, ray);
 				if (intersection.distanceFromCamera < INFINITY)
 				{
 					colours.push_back(intersection.colour);

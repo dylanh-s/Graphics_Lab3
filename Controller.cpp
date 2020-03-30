@@ -1,4 +1,4 @@
-#include "Rasterizer.h"
+// #include "Rasterizer.h"
 #include "Raytracer.h"
 
 using namespace std;
@@ -7,7 +7,7 @@ using namespace glm;
 int MODE = 2;
 
 void update();
-void draw(PpmContent ppm, ObjContentTexture obj);
+void draw(ObjContent obj);
 void handleEvent(SDL_Event event);
 vector<double> interpolate(double from, double to, int numberOfValues);
 vector<vec3> interpolate3D(vec3 from, vec3 to, int numberOfValues);
@@ -16,23 +16,20 @@ CanvasTriangle getRandomTriangle();
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
-	PpmContent ppm = ppmRead("simon.ppm");
-	// printf("asdsasdf");
-	ObjContentTexture obj = objReadTexture("logo.obj");
-	// ObjContent obj = objRead("logo.obj");
-
+	ObjContent obj = objRead("logo.obj");
+	printf("obj read\n");
 	int n = 1;
 	while (true)
 	{
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
-		// drawTexture(ppm);
-		draw(ppm, obj);
+		// drawTexture(obj.ppms.at(0));
+		draw(obj);
 		window.renderFrame();
 		if (n <= 3)
-			ppmWrite(ppm, n);
-		n++;
+			// ppmWrite(ppm, n);
+			n++;
 		printf("frame\n");
 	}
 }
@@ -83,33 +80,12 @@ uint32_t vec3ToColour(vec3 rgb)
 	return colour;
 }
 
-CanvasTriangle getRandomTriangle()
-{
-	bool allDifferent = false;
-	CanvasPoint v0;
-	CanvasPoint v1;
-	CanvasPoint v2;
-	while (!allDifferent)
-	{
-		v0 = CanvasPoint(rand() % window.width, rand() % window.height);
-		v1 = CanvasPoint(rand() % window.width, rand() % window.height);
-		v2 = CanvasPoint(rand() % window.width, rand() % window.height);
-		allDifferent = true;
-		if ((v0.x == v1.x && v0.y == v1.y) || (v0.x == v2.x && v0.y == v2.y) || (v1.x == v2.x && v1.y == v2.y))
-		{
-			allDifferent = false;
-		}
-	}
-
-	return CanvasTriangle(v0, v1, v2, Colour(rand() % 255, rand() % 255, rand() % 255));
-}
-
 void update()
 {
 	// Function for performing animation (shifting artifacts or moving the camera)
 }
 
-void draw(PpmContent ppm, ObjContentTexture obj)
+void draw(ObjContent obj)
 {
 	if (MODE == 0)
 	{
@@ -122,23 +98,23 @@ void draw(PpmContent ppm, ObjContentTexture obj)
 	else if (MODE == 2)
 	{
 		// solid shadows
-		drawRaytrace(obj, ppm, MODE);
+		drawRaytrace(obj, MODE);
 	}
 	else if (MODE == 3)
 	{
 		// soft shadows
 		// and anti-aliasing
-		drawRaytraceWithAA(obj, ppm, MODE);
+		drawRaytraceWithAA(obj, MODE);
 	}
 	else if (MODE == 4)
 	{
 		// no shadows
-		drawRaytrace(obj, ppm, MODE);
+		drawRaytrace(obj, MODE);
 	}
 	else if (MODE == 69)
 	{
 		// no shadows
-		drawRaytrace(obj, ppm, MODE);
+		drawRaytrace(obj, MODE);
 		// ObjContentTexture objTex = objReadTexture("logo.obj");
 	}
 }
