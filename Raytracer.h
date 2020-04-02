@@ -19,20 +19,19 @@ vec3 uintToVec3(uint32_t rgb)
 	return vec3(r, g, b);
 }
 
-Colour getCorrespondingTextureCol(float u, float v, PpmContent ppm, CanvasTriangle texture_tri)
+vec3 getReflectedRay(vec3 planeNormal, vec3 viewRay)
 {
-	vec2 v0 = vec2(texture_tri.vertices[0].x, texture_tri.vertices[0].y);
-	vec2 v1 = vec2(texture_tri.vertices[1].x, texture_tri.vertices[1].y);
-	vec2 v2 = vec2(texture_tri.vertices[2].x, texture_tri.vertices[2].y);
-
-	vec2 u_tex = u * (v1 - v0);
-	vec2 v_tex = v * (v2 - v0);
-
-	vec2 point_texture = (u_tex + v_tex) + v0;
-	// printf("point_texture = %f,%f\n", point_texture.x, point_texture.y);
-	uint32_t uint_col = ppm.image[point_texture.x * PPM_WIDTH][point_texture.y * PPM_HEIGHT];
-	vec3 col = uintToVec3(uint_col);
-	return Colour(col.x, col.y, col.z, 1.0f);
+	planeNormal = normalize(planeNormal);
+	if (dot(viewRay, planeNormal) > 0.0f)
+	{
+		planeNormal = -1.f * planeNormal;
+	}
+	else
+	{
+		viewRay = -1.f * viewRay;
+	}
+	vec3 reflection = viewRay - (2.0f * dot(planeNormal, viewRay) * planeNormal);
+	return normalize(reflection);
 }
 
 int countShadows(ObjContent obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
@@ -117,18 +116,22 @@ float getShadowProportionForSoftShadows(ObjContent obj, vector<vec3> lightSource
 
 vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray, vec3 Ka, vec3 Kd, vec3 Ks, float sExp)
 {
-	vec3 Ip = vec3(20.0, 20.0, 20.0); // intensity at point
-	vec3 Ia = vec3(0.05, 0.05, 0.05); // ambient intensity
-	vec3 I = vec3(1.0, 1.0, 1.0);	 // final intensity
+	vec3 Ip = vec3(20.0, 20.0, 20.0); // intensity at light source point (must be high for logo model)
+	// vec3 Ip = vec3(1.0f, 1.0f, 1.0f);	 // intensity at light source point (must be low for cornell box)
+	vec3 Ia = vec3(0.05f, 0.05f, 0.05f); // ambient intensity
+	vec3 I = vec3(1.0f, 1.0f, 1.0f);	 // final intensity
 	for (int i = 0; i < lightSources.size(); i++)
 	{
 		vec3 lightVec = (LIGHTS.at(i) - point_in_world);
-		// float f = (1 / (4 * M_PI * length(lightVec) * length(lightVec)));
 
-		// float f = 9 / (M_PI * length(lightVec));
-		float f = 10 / length(lightVec);
+		// f defines the light dropoff behaviour with distance. What you use depends on scale of the model.
+		// This is one way to tune lighting in the scene, it has a really large impact on outcome.
 
-		// ambient
+		// float f = (1 / (4 * M_PI * length(lightVec) * length(lightVec))); // original 1/4*pi*d^2 - doesnt look good
+		// float f = 9 / (M_PI * length(lightVec)); // this is ok for a moody cornell box
+		float f = 10 / length(lightVec); // this is ok for a moody logo
+
+		// Ambient
 		vec3 ambient = Ia * Ka;
 		// cout << "ambient" << ambient << endl;
 
@@ -140,7 +143,6 @@ vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in
 			normal *= -1.f;
 			light_dot_normal = dot(normalize(lightVec), normal);
 		}
-
 		vec3 lambert = f * Ip * Kd * light_dot_normal;
 		// cout << "lambert" << lambert << endl;
 
@@ -151,11 +153,13 @@ vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in
 		vec3 phong;
 		if (reflection_dot_view < 0.0f)
 		{
+			// no reflection
 			phong = vec3(0.0f, 0.0f, 0.0f);
 		}
 		else
 		{
-			printf("%f\n", reflection_dot_view);
+			// reflection
+			// (we raise dot product to the power of specular exponent (Ns in MTL file, 100 by default) - higher value for a tighter reflection)
 			phong = f * Ip * Ks * pow(reflection_dot_view, sExp);
 		}
 		// cout << "phong" << phong << endl;
@@ -177,6 +181,7 @@ vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in
 	return I;
 }
 
+// DEPRECATED - NO LONGER USED
 float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray)
 {
 	float brightnessIncrease;
@@ -226,7 +231,7 @@ float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_w
 	// brightness = dot(reflection,ray)
 }
 
-RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
+RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray, vec3 startPos, int rayBouncesRemaining)
 {
 	RayTriangleIntersection closest = RayTriangleIntersection();
 	closest.distanceFromCamera = INFINITY;
@@ -238,7 +243,7 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 
 		vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
 		vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
-		vec3 SPVector = (CAMERA_POS - triangle.vertices[0]);
+		vec3 SPVector = (startPos - triangle.vertices[0]);
 		mat3 DEMatrix(-ray, e0, e1);
 		vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
 
@@ -246,7 +251,7 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 		float u = possibleSolution.y;
 		float v = possibleSolution.z;
 		// t,u,v is valid
-		if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0)
+		if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t >= 1.0f)
 		{
 			if (t < closest.distanceFromCamera)
 			{
@@ -261,32 +266,48 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 				vec3 Kd;
 				triangle.material.getKd(u, v, obj.textureTris[c], Kd);
 				vec3 Ks;
-				triangle.material.getKd(u, v, obj.textureTris[c], Ks);
+				triangle.material.getKs(u, v, obj.textureTris[c], Ks);
 				float sExp = triangle.material.specularExponent;
 
 				float brightness = 1.0;
-				// hard shadows
-				// if (SHADOW_MODE == 69)
-				vec3 col = getColourOfPoint(LIGHTS, planeNorm, point_world, ray, Ka, Kd, Ks, sExp);
-				// cout << col << endl;
 				Colour pixelCol;
-				pixelCol = Colour(col.x, col.y, col.z, 1.0f);
-				// if (SHADOW_MODE == 2)
-				// {
-				// 	int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
-				// 	if (shadows == LIGHTS.size())
-				// 	{
-				// 		pixelCol.brightness = 0.2f;
-				// 	}
-				// }
-				// // soft shadows
-				// else if (SHADOW_MODE == 3)
-				// {
-				// 	float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
-				// 	// TODO this can be tuned to be prettier
-				// 	brightness -= pow(shadeProportion, 0.5f);
-				// 	pixelCol.brightness = brightness;
-				// }
+				if (triangle.material.mirrorness > 0.01f && rayBouncesRemaining > 0)
+				{
+					vec3 reflected_ray = getReflectedRay(planeNorm, ray);
+					// printf("%i\n", rayBouncesRemaining);
+					RayTriangleIntersection intersection = getClosestIntersection(obj, reflected_ray, point_world, rayBouncesRemaining - 1);
+					if (intersection.distanceFromCamera < INFINITY)
+					{
+						pixelCol = intersection.colour;
+						// intersection.colour.setBrightness(triangle.material.mirrorness * intersection.colour.brightness);
+					}
+					else
+					{
+						pixelCol = Colour(0, 0, 0);
+					}
+				}
+				else
+				{
+					vec3 col = getColourOfPoint(LIGHTS, planeNorm, point_world, ray, Ka, Kd, Ks, sExp);
+					pixelCol = Colour(col.x, col.y, col.z, 1.0f);
+					// hard shadows
+					if (SHADOW_MODE == 2)
+					{
+						int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
+						if (shadows == LIGHTS.size())
+						{
+							pixelCol.brightness = 0.2f;
+						}
+					}
+					// soft shadows
+					else if (SHADOW_MODE == 3)
+					{
+						float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
+						//TODO this can definitely be tuned.
+						brightness -= pow(shadeProportion, 0.5f);
+						pixelCol.brightness = brightness;
+					}
+				}
 				closest = RayTriangleIntersection(point_world, t, triangle, pixelCol);
 			}
 		}
@@ -296,13 +317,16 @@ RayTriangleIntersection getClosestIntersection(ObjContent obj, vec3 ray)
 
 void drawRaytrace(ObjContent obj, int mode)
 {
-	// vec3 a = vec3(-0.884011, 5.219334, -2.517968);
-	// vec3 b = vec3(0.415989, 5.218497, -3.567968);
 	vector<vec3> empty;
 	LIGHTS = empty;
 	SHADOW_MODE = mode;
+
+	// lighting for cornell box
+	// vec3 a = vec3(-0.884011, 5.219334, -2.517968);
+	// vec3 b = vec3(0.415989, 5.218497, -3.567968);
 	// LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
-	// LIGHTS.push_back(vec3(0, 1, 1));
+
+	// lighting for logo
 	LIGHTS.push_back(vec3(412.000000, 230.000000, 100.000000));
 #pragma omp parallel
 #pragma omp for
@@ -317,7 +341,7 @@ void drawRaytrace(ObjContent obj, int mode)
 			float yp = (y - h);
 			vec3 ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
 			ray = glm::normalize(ray);
-			RayTriangleIntersection intersection = getClosestIntersection(obj, ray);
+			RayTriangleIntersection intersection = getClosestIntersection(obj, ray, CAMERA_POS, 5);
 			if (intersection.distanceFromCamera < INFINITY)
 			{
 				window.setPixelColour(x, y, -0.5, intersection.colour.pack());
@@ -341,12 +365,13 @@ void drawRaytraceWithAA(ObjContent obj, int mode)
 	// alias_pattern.push_back(vec2(3.0f / foo, 7.0f / foo));
 	// alias_pattern.push_back(vec2(8.0f / foo, 6.0f / foo));
 
-	vec3 a = vec3(-0.884011, 5.219334, -2.517968);
-	vec3 b = vec3(0.415989, 5.218497, -3.567968);
+	// vec3 a = vec3(-0.884011, 5.219334, -2.517968);
+	// vec3 b = vec3(0.415989, 5.218497, -3.567968);
+	// LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
+	LIGHTS.push_back(vec3(412.000000, 230.000000, 100.000000));
 	vector<vec3> empty;
 	LIGHTS = empty;
 	SHADOW_MODE = mode;
-	LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
 #pragma omp parallel
 #pragma omp for
 	for (int x = 0; x <= WIDTH; x++)
@@ -364,7 +389,7 @@ void drawRaytraceWithAA(ObjContent obj, int mode)
 				// get ray and find colour
 				ray = vec3(xp + alias_pattern.at(a).x, yp + alias_pattern.at(a).y, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
 				ray = glm::normalize(ray);
-				intersection = getClosestIntersection(obj, ray);
+				intersection = getClosestIntersection(obj, ray, CAMERA_POS, 3);
 				if (intersection.distanceFromCamera < INFINITY)
 				{
 					colours.push_back(intersection.colour);

@@ -17,16 +17,16 @@ using namespace glm;
 
 #define WIDTH 250
 #define HEIGHT 250
-#define PPM_WIDTH 166
-#define PPM_HEIGHT 220
 #define DELTA 25
-#define THETA 0.1
+#define THETA 0.3
 #define FOCAL_LENGTH HEIGHT / 2
 
 int w = WIDTH / 2;
 int h = HEIGHT / 2;
 
+// logo camera pos
 vec3 CAMERA_POS(200, 200, 400);
+// cornell box camera pos
 // vec3 CAMERA_POS(0, 3, 3);
 mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
@@ -34,7 +34,19 @@ DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 class ObjContent
 {
 public:
-	ObjContent() {}
+	ObjContent()
+	{
+		/*
+		we need pointers to the correct PpmContent in each Material.
+		When you push_back to a vector, it may be resized which invalidates all pointers
+		Because PpmContent is stored in a vector, we cannot let it change size.
+		TERRIBLE PRACTICE FIX - we use reserve to cap to set the size of the vector.
+		if we go over a size of 10, all ppm pointers invalid and textures won't work.
+		under 10 - we waste a bunch of memory :(
+		a better fix exists where we maintain pointers to pointers but i dont want to do it
+		*/
+		ppms.reserve(10);
+	}
 	std::vector<ModelTriangle> faces;
 	std::vector<CanvasTriangle> textureTris;
 	std::unordered_map<std::string, Material> palette;
@@ -208,12 +220,32 @@ ObjContent populatePalette(string filename)
 				string *stuff = split(line, ' ');
 				currentMtl.setSpecularExponent(stof(stuff[1]));
 			}
+			else if (line.substr(0, 3) == "Mir")
+			{
+				string *stuff = split(line, ' ');
+				float mi = stof(stuff[1]);
+				currentMtl.mirrorness = mi;
+			}
+			else if (line.substr(0, 6) == "map_Ka")
+			{
+				string *stuff = split(line, ' ');
+				PpmContent ppm = ppmRead(stuff[1]);
+				PpmContent *ptr = content.addPpm(ppm);
+				currentMtl.setKaToTexture(ptr);
+			}
 			else if (line.substr(0, 6) == "map_Kd")
 			{
 				string *stuff = split(line, ' ');
 				PpmContent ppm = ppmRead(stuff[1]);
 				PpmContent *ptr = content.addPpm(ppm);
 				currentMtl.setKdToTexture(ptr);
+			}
+			else if (line.substr(0, 6) == "map_Ks")
+			{
+				string *stuff = split(line, ' ');
+				PpmContent ppm = ppmRead(stuff[1]);
+				PpmContent *ptr = content.addPpm(ppm);
+				currentMtl.setKsToTexture(ptr);
 			}
 		}
 	}

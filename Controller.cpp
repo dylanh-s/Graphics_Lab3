@@ -17,6 +17,7 @@ int main(int argc, char *argv[])
 {
 	SDL_Event event;
 	ObjContent obj = objRead("logo.obj");
+	// ObjContent obj = objRead("cornell-box.obj");
 	printf("obj read\n");
 	int n = 1;
 	while (true)
@@ -24,7 +25,6 @@ int main(int argc, char *argv[])
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update();
-		// drawTexture(obj.ppms.at(0));
 		draw(obj);
 		window.renderFrame();
 		if (n <= 3)

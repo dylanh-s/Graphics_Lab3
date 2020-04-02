@@ -17,12 +17,21 @@ private:
 	}
 	bool getKa(float u, float v, glm::vec3 &col)
 	{
+		// printf("ka\n");
 		if (Ka_is_texture)
 		{
 			int W = Ka_ppm->width;
 			int H = Ka_ppm->height;
-			uint32_t uint_col = Ka_ppm->image[u * W][v * H];
-			col = uintToVec3(uint_col) * Ka;
+			float x = u * (W - 1);
+			float y = v * (H - 1);
+			// printf("W = %i\n", W - 1);
+			// printf("H = %i\n", H - 1);
+			// printf("U = %f\n", u);
+			// printf("V = %f\n", v);
+			uint32_t uint_col = Ka_ppm->image[y][x];
+			col = uintToVec3(uint_col);
+			glm::vec3 col_mul = (col / 255.0f) * (Ka / 255.0f);
+			col = col_mul * 255.0f;
 			return 0;
 		}
 		else
@@ -32,16 +41,13 @@ private:
 	}
 	bool getKd(float u, float v, glm::vec3 &col)
 	{
+		// printf("kd\n");
 		if (Kd_is_texture)
 		{
 			int W = Kd_ppm->width;
 			int H = Kd_ppm->height;
 			float x = u * (W - 1);
 			float y = v * (H - 1);
-			// printf("W = %i\n", W - 1);
-			// printf("H = %i\n", H - 1);
-			// printf("U = %f\n", u);
-			// printf("V = %f\n", v);
 
 			uint32_t uint_col = Kd_ppm->image[y][x];
 			col = uintToVec3(uint_col);
@@ -57,12 +63,17 @@ private:
 	}
 	bool getKs(float u, float v, glm::vec3 &col)
 	{
+		// printf("kd\n");
 		if (Ks_is_texture)
 		{
 			int W = Ks_ppm->width;
 			int H = Ks_ppm->height;
-			uint32_t uint_col = Ks_ppm->image[u * W][v * H];
-			col = uintToVec3(uint_col) * Ks;
+			float x = u * (W - 1);
+			float y = v * (H - 1);
+			uint32_t uint_col = Ks_ppm->image[y][x];
+			col = uintToVec3(uint_col);
+			glm::vec3 col_mul = (col / 255.0f) * (Ks / 255.0f);
+			col = col_mul * 255.0f;
 			return 0;
 		}
 		else
@@ -83,8 +94,10 @@ public:
 
 	glm::vec3 Ks;
 	bool Ks_is_texture = false;
-	float specularExponent = 100;
 	PpmContent *Ks_ppm;
+
+	float specularExponent = 100.0f;
+	float mirrorness = 0.0f;
 
 	Material() {}
 
@@ -201,7 +214,6 @@ public:
 			col = Kd;
 			return -1;
 		}
-		// printf("booglaijfow\n");
 		glm::vec2 v0 = glm::vec2(tri.vertices[0].x, tri.vertices[0].y);
 		glm::vec2 v1 = glm::vec2(tri.vertices[1].x, tri.vertices[1].y);
 		glm::vec2 v2 = glm::vec2(tri.vertices[2].x, tri.vertices[2].y);
