@@ -123,7 +123,7 @@ PpmContent ppmRead(string filename)
 	}
 
 	std::getline(in, line);
-	// std::getline(in, line);
+	std::getline(in, line);
 	in >> line;
 	ppm.width = std::stoi(line);
 	in >> line;

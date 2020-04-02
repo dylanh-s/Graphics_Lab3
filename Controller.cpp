@@ -16,7 +16,7 @@ CanvasTriangle getRandomTriangle();
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
-	ObjContent obj = objRead("logo.obj");
+	ObjContent obj = objRead("inputs/logo.obj");
 	// ObjContent obj = objRead("cornell-box.obj");
 	printf("obj read\n");
 	int n = 1;
