@@ -11,8 +11,9 @@ std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end);
 void drawLine(CanvasPoint start, CanvasPoint end, Colour colour);
 void drawStrokedTriangle(CanvasTriangle tri);
 void drawFilledTriangle(CanvasTriangle tri);
-void drawFrame(ObjContent obj);
-void drawRaster(ObjContent obj);
+void drawFrame(OBJ obj);
+void drawRaster(OBJ obj);
+void drawTexture(PPM ppm);
 
 CanvasPoint projectPoint(vec3 p)
 {
@@ -110,7 +111,7 @@ void drawFilledTriangle(CanvasTriangle tri)
 	}
 }
 
-void drawFrame(ObjContent obj)
+void drawFrame(OBJ obj)
 {
 #pragma omp parallel
 #pragma omp for
@@ -120,7 +121,7 @@ void drawFrame(ObjContent obj)
 	}
 }
 
-void drawRaster(ObjContent obj)
+void drawRaster(OBJ obj)
 {
 #pragma omp parallel
 #pragma omp for
@@ -130,7 +131,7 @@ void drawRaster(ObjContent obj)
 	}
 }
 
-void drawTexture(PpmContent ppm)
+void drawTexture(PPM ppm)
 {
 	for (int i = 0; i < ppm.height; i++)
 	{

@@ -1,8 +1,9 @@
 #ifndef TEXTURETRIANGLE_H
 #define TEXTURETRIANGLE_H
-#include <glm/glm.hpp>
-#include "Colour.h"
 #include "TexturePoint.h"
+#include "Colour.h"
+#include <glm/glm.hpp>
+#include <iostream>
 #include <string>
 
 class TextureTriangle

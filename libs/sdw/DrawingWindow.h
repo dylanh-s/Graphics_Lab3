@@ -2,6 +2,7 @@
 #define DRAWINGWINDOW_H
 #include <SDL2/SDL.h>
 #include <iostream>
+#include <limits>
 
 class DrawingWindow
 {
@@ -16,8 +17,6 @@ public:
   int width;
   uint32_t *pixelBuffer;
   float *depthBuffer;
-
-  // Constructor method
 
   DrawingWindow();
   DrawingWindow(int w, int h, bool fullscreen);

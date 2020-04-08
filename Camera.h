@@ -7,7 +7,7 @@ using namespace glm;
 
 void translateCamera(float x, float y, float z);
 void rotateCamera(float x, float y, float z);
-void focusCamera(vec3 p);
+void lookCamera(vec3 p);
 
 void translateCamera(float x, float y, float z)
 {

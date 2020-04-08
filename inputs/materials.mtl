@@ -3,7 +3,7 @@ Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
 Ns 96.078431
-map_Kd inputs/texture.ppm
+map_Kd ./inputs/texture.ppm
 
 WOOD NOT WORKING - PPM SEEMS TO BE CORRUPTED
 newmtl Wood
@@ -11,16 +11,15 @@ Ka 1.000000 1.000000 1.000000
 Kd 0.640000 0.640000 0.640000
 Ks 0.500000 0.500000 0.500000
 Ns 96.078431
-map_Kd inputs/wood-2.ppm
+map_Kd ./inputs/wood-2.ppm
 
 newmtl Leopard
 Ka 1.000000 1.000000 1.000000
 Kd 0.660000 0.660000 0.660000
 Ks 0.500000 0.500000 0.500000
 Ns 20.000000
-map_Kd inputs/leopard_texture.ppm
-map_Ks inputs/leopard_texture.ppm
-
+map_Kd ./inputs/leopard_texture.ppm
+map_Ks ./inputs/leopard_texture.ppm
 
 newmtl Mirror
 Ka 1.000000 1.000000 1.000000

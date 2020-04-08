@@ -1,4 +1,4 @@
-mtllib inputs/cornell-box.mtl
+mtllib ./inputs/cornell-box.mtl
 
 o light
 usemtl White

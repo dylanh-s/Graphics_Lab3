@@ -1,4 +1,4 @@
-mtllib inputs/materials.mtl
+mtllib ./inputs/materials.mtl
 
 o logo
 usemtl Leopard

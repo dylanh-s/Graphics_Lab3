@@ -1,17 +1,15 @@
 #ifndef FILEHANDLER_H
 #define FILEHANDLER_H
-#include <ModelTriangle.h>
-#include <CanvasTriangle.h>
-#include <RayTriangleIntersection.h>
-#include <DrawingWindow.h>
-#include <TextureTriangle.h>
+#include "DrawingWindow.h"
+#include "ModelTriangle.h"
+#include "CanvasTriangle.h"
+#include "TextureTriangle.h"
+#include "Intersection.h"
+#include "Object.h"
+#include "Utils.h"
 #include <glm/glm.hpp>
-#include <Utils.h>
-#include <iostream>
 #include <fstream>
-#include <vector>
-#include <unordered_map>
-#include <PpmContent.h>
+
 using namespace std;
 using namespace glm;
 
@@ -24,56 +22,14 @@ using namespace glm;
 int w = WIDTH / 2;
 int h = HEIGHT / 2;
 
-// logo camera pos
 vec3 CAMERA_POS(200, 200, 400);
-// cornell box camera pos
-// vec3 CAMERA_POS(0, 3, 3);
 mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
-class ObjContent
-{
-public:
-	ObjContent()
-	{
-		/*
-		we need pointers to the correct PpmContent in each Material.
-		When you push_back to a vector, it may be resized which invalidates all pointers
-		Because PpmContent is stored in a vector, we cannot let it change size.
-		TERRIBLE PRACTICE FIX - we use reserve to cap to set the size of the vector.
-		if we go over a size of 10, all ppm pointers invalid and textures won't work.
-		under 10 - we waste a bunch of memory :(
-		a better fix exists where we maintain pointers to pointers but i dont want to do it
-		*/
-		ppms.reserve(10);
-	}
-	std::vector<ModelTriangle> faces;
-	std::vector<CanvasTriangle> textureTris;
-	std::unordered_map<std::string, Material> palette;
-	std::vector<PpmContent> ppms;
-	int max = 0;
-
-	void addFace(ModelTriangle face)
-	{
-		faces.push_back(face);
-	}
-	void addTextureTri(CanvasTriangle tex)
-	{
-		textureTris.push_back(tex);
-	}
-
-	void addMaterial(Material mtl, std::string name)
-	{
-		palette[name] = mtl;
-	}
-	PpmContent *addPpm(PpmContent ppm)
-	{
-		ppms.push_back(ppm);
-		int index = ppms.size() - 1;
-		PpmContent *ptr = &ppms[index];
-		return ptr;
-	}
-};
+void ppmWrite(int n);
+PPM ppmRead(string filename);
+OBJ mtlRead(string filename);
+OBJ objRead(string filename);
 
 void ppmWrite(int n)
 {
@@ -85,8 +41,7 @@ void ppmWrite(int n)
 	std::ofstream out(filename, std::ios::out | std::ios::binary);
 	if (!out)
 	{
-		std::cerr << "Cannot open "
-				  << "texture_out.ppm" << std::endl;
+		std::cerr << "Cannot open " << filename << std::endl;
 		exit(1);
 	}
 
@@ -108,13 +63,13 @@ void ppmWrite(int n)
 	out.close();
 }
 
-PpmContent ppmRead(string filename)
+PPM ppmRead(string filename)
 {
 	int red;
 	int green;
 	int blue;
 	string line;
-	PpmContent ppm;
+	PPM ppm;
 	std::ifstream in(filename, std::ios::in | std::ios::binary);
 	if (!in)
 	{
@@ -148,13 +103,11 @@ PpmContent ppmRead(string filename)
 	return ppm;
 }
 
-ObjContent populatePalette(string filename)
+OBJ mtlRead(string filename)
 {
-	ObjContent content;
-
-	ofstream myfile;
+	OBJ obj;
+	MTL mtl = MTL("none");
 	string line;
-	Material currentMtl = Material("none");
 	std::ifstream in(filename, std::ios::in);
 	if (!in)
 	{
@@ -168,86 +121,83 @@ ObjContent populatePalette(string filename)
 		{
 			if (line.substr(0, 6) == "newmtl")
 			{
-				if (currentMtl.name != "none")
+				if (mtl.name != "none")
 				{
-					content.addMaterial(currentMtl, currentMtl.name);
+					obj.addMaterial(mtl, mtl.name);
 				}
-				string *stuff = split(line, ' ');
-				key = stuff[1];
-				currentMtl = Material(key);
+				string *token = split(line, ' ');
+				key = token[1];
+				mtl = MTL(key);
 			}
 			else if (line.substr(0, 2) == "Ka")
 			{
-				string *stuff = split(line, ' ');
-				int r = 255 * stod(stuff[1]);
-				int g = 255 * stod(stuff[2]);
-				int b = 255 * stod(stuff[3]);
-				currentMtl.setKaToColour(vec3(r, g, b));
+				string *token = split(line, ' ');
+				int r = 255 * stod(token[1]);
+				int g = 255 * stod(token[2]);
+				int b = 255 * stod(token[3]);
+				mtl.setKaToColour(vec3(r, g, b));
 			}
 			else if (line.substr(0, 2) == "Kd")
 			{
-				string *stuff = split(line, ' ');
-				int r = 255 * stod(stuff[1]);
-				int g = 255 * stod(stuff[2]);
-				int b = 255 * stod(stuff[3]);
-				currentMtl.setKdToColour(vec3(r, g, b));
+				string *token = split(line, ' ');
+				int r = 255 * stod(token[1]);
+				int g = 255 * stod(token[2]);
+				int b = 255 * stod(token[3]);
+				mtl.setKdToColour(vec3(r, g, b));
 			}
 			else if (line.substr(0, 2) == "Ks")
 			{
-				string *stuff = split(line, ' ');
-				int r = 255 * stod(stuff[1]);
-				int g = 255 * stod(stuff[2]);
-				int b = 255 * stod(stuff[3]);
-				currentMtl.setKsToColour(vec3(r, g, b));
+				string *token = split(line, ' ');
+				int r = 255 * stod(token[1]);
+				int g = 255 * stod(token[2]);
+				int b = 255 * stod(token[3]);
+				mtl.setKsToColour(vec3(r, g, b));
 			}
 			else if (line.substr(0, 2) == "Ns")
 			{
-				string *stuff = split(line, ' ');
-				currentMtl.setSpecularExponent(stof(stuff[1]));
+				string *token = split(line, ' ');
+				mtl.setSpecularExponent(stof(token[1]));
 			}
 			else if (line.substr(0, 3) == "Mir")
 			{
-				string *stuff = split(line, ' ');
-				float mi = stof(stuff[1]);
-				currentMtl.mirrorness = mi;
+				string *token = split(line, ' ');
+				float mi = stof(token[1]);
+				mtl.mirrorness = mi;
 			}
 			else if (line.substr(0, 6) == "map_Ka")
 			{
-				string *stuff = split(line, ' ');
-				PpmContent ppm = ppmRead(stuff[1]);
-				PpmContent *ptr = content.addPpm(ppm);
-				currentMtl.setKaToTexture(ptr);
+				string *token = split(line, ' ');
+				PPM ppm = ppmRead(token[1]);
+				PPM *ptr = obj.addTexture(ppm);
+				mtl.setKaToTexture(ptr);
 			}
 			else if (line.substr(0, 6) == "map_Kd")
 			{
-				string *stuff = split(line, ' ');
-				PpmContent ppm = ppmRead(stuff[1]);
-				PpmContent *ptr = content.addPpm(ppm);
-				currentMtl.setKdToTexture(ptr);
+				string *token = split(line, ' ');
+				PPM ppm = ppmRead(token[1]);
+				PPM *ptr = obj.addTexture(ppm);
+				mtl.setKdToTexture(ptr);
 			}
 			else if (line.substr(0, 6) == "map_Ks")
 			{
-				string *stuff = split(line, ' ');
-				PpmContent ppm = ppmRead(stuff[1]);
-				PpmContent *ptr = content.addPpm(ppm);
-				currentMtl.setKsToTexture(ptr);
+				string *token = split(line, ' ');
+				PPM ppm = ppmRead(token[1]);
+				PPM *ptr = obj.addTexture(ppm);
+				mtl.setKsToTexture(ptr);
 			}
 		}
 	}
-
-	content.addMaterial(currentMtl, currentMtl.name);
-	myfile.close();
-	return content;
+	obj.addMaterial(mtl, mtl.name);
+	return obj;
 }
 
-ObjContent objRead(string filename)
+OBJ objRead(string filename)
 {
-
-	ObjContent toReturn;
+	OBJ obj;
 	vector<vec3> vertices;
 	vector<TexturePoint> texturePoints;
 	string line;
-	Material currentMtl;
+	MTL mtl;
 	std::ifstream in(filename, std::ios::in);
 	if (!in)
 	{
@@ -262,28 +212,28 @@ ObjContent objRead(string filename)
 		{
 			if (line.substr(0, 6) == "mtllib")
 			{
-				string *stuff = split(line, ' ');
-				string mtlFname = stuff[1];
-				toReturn = populatePalette(mtlFname);
+				string *token = split(line, ' ');
+				string mtlFname = token[1];
+				obj = mtlRead(mtlFname);
 			}
 			if (line.substr(0, 6) == "usemtl")
 			{
-				string *stuff = split(line, ' ');
-				currentMtl = toReturn.palette.at(stuff[1]);
+				string *token = split(line, ' ');
+				mtl = obj.mtls.at(token[1]);
 			}
 			else if (line.substr(0, 2) == "v ")
 			{
-				string *stuff = split(line, ' ');
-				double x = stod(stuff[1]);
-				double y = stod(stuff[2]);
-				double z = stod(stuff[3]);
+				string *token = split(line, ' ');
+				double x = stod(token[1]);
+				double y = stod(token[2]);
+				double z = stod(token[3]);
 				vertices.push_back(vec3(x, y, z));
 			}
 			else if (line.substr(0, 3) == "vt ")
 			{
-				string *stuff = split(line, ' ');
-				double xt = stod(stuff[1]);
-				double yt = stod(stuff[2]);
+				string *token = split(line, ' ');
+				double xt = stod(token[1]);
+				double yt = stod(token[2]);
 				texturePoints.push_back(TexturePoint(xt, yt));
 			}
 			//check for faces
@@ -292,22 +242,21 @@ ObjContent objRead(string filename)
 				int A, B, C;	//to store vertex indices
 				int At, Bt, Ct; //to store texture indices
 				const char *chh = line.c_str();
-				sscanf(chh, "f %i/%i %i/%i %i/%i", &A, &At, &B, &Bt, &C, &Ct); //here it reads the line starting with f and store the corresponding values in the variables
+				sscanf(chh, "f %i/%i %i/%i %i/%i", &A, &At, &B, &Bt, &C, &Ct);
 				At--;
 				Bt--;
 				Ct--;
 				A--;
 				B--;
 				C--;
-				ModelTriangle tri = ModelTriangle(vertices.at(A), vertices.at(B), vertices.at(C), currentMtl);
+				ModelTriangle tri = ModelTriangle(vertices.at(A), vertices.at(B), vertices.at(C), mtl);
 				CanvasTriangle tex_tri = CanvasTriangle(texturePoints.at(At), texturePoints.at(Bt), texturePoints.at(Ct));
-				toReturn.addTextureTri(tex_tri);
-				toReturn.addFace(tri);
+				obj.addTextureTri(tex_tri);
+				obj.addFace(tri);
 			}
 		}
 		n++;
 	}
-	return toReturn;
+	return obj;
 }
-
 #endif

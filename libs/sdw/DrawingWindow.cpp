@@ -1,5 +1,4 @@
 #include "DrawingWindow.h"
-#include <limits>
 
 // Simple constructor method
 DrawingWindow::DrawingWindow()
@@ -78,7 +77,6 @@ void DrawingWindow::setPixelDepth(int x, int y, float depth)
 {
   if ((x < 0) || (x >= width) || (y < 0) || (y >= height))
   {
-    // std::cout << x << "," << y << " not on visible screen area" << std::endl;
   }
   else
     depthBuffer[(y * width) + x] = depth;
@@ -88,11 +86,9 @@ void DrawingWindow::setPixelColour(int x, int y, float depth, uint32_t colour)
 {
   if ((x < 0) || (x >= width) || (y < 0) || (y >= height))
   {
-    // std::cout << x << "," << y << " not on visible screen area" << std::endl;
   }
   else
   {
-    // std::cout << depth << std::endl;
     if (getPixelDepth(x, y) >= depth)
     {
       pixelBuffer[(y * width) + x] = colour;
@@ -105,7 +101,6 @@ uint32_t DrawingWindow::getPixelColour(int x, int y)
 {
   if ((x < 0) || (x >= width) || (y < 0) || (y >= height))
   {
-    // std::cout << x << "," << y << " not on visible screen area" << std::endl;
     return -1;
   }
   else
@@ -116,7 +111,6 @@ float DrawingWindow::getPixelDepth(int x, int y)
 {
   if ((x < 0) || (x >= width) || (y < 0) || (y >= height))
   {
-    // std::cout << x << "," << y << " not on visible screen area" << std::endl;
     return -1;
   }
   else

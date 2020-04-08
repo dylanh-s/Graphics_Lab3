@@ -7,18 +7,13 @@ using namespace glm;
 int MODE = 2;
 
 void update();
-void draw(ObjContent obj);
+void draw(OBJ obj);
 void handleEvent(SDL_Event event);
-vector<double> interpolate(double from, double to, int numberOfValues);
-vector<vec3> interpolate3D(vec3 from, vec3 to, int numberOfValues);
-CanvasTriangle getRandomTriangle();
 
 int main(int argc, char *argv[])
 {
 	SDL_Event event;
-	ObjContent obj = objRead("inputs/logo.obj");
-	// ObjContent obj = objRead("cornell-box.obj");
-	printf("obj read\n");
+	OBJ obj = objRead("./inputs/logo.obj");
 	int n = 1;
 	while (true)
 	{
@@ -34,58 +29,12 @@ int main(int argc, char *argv[])
 	}
 }
 
-vector<double> interpolate(double from, double to, int numberOfValues)
-{
-	vector<double> v;
-
-	double step = (to - from) / (numberOfValues - 1);
-
-	v.push_back(from);
-
-	for (int i = 0; i < numberOfValues - 1; i++)
-
-	{
-		v.push_back(v.back() + step);
-	}
-	return v;
-}
-
-vector<vec3> interpolate3D(vec3 from, vec3 to, int numberOfValues)
-{
-	vector<vec3> v;
-
-	float sf = (float)(numberOfValues - 1);
-	vec3 step = (to - from) / sf;
-
-	v.push_back(from);
-
-	for (int i = 0; i < numberOfValues - 1; i++)
-	{
-		v.push_back(v.back() + step);
-	}
-	return v;
-}
-
-vec3 colourToVec3(uint32_t rgb)
-{
-	int r = (rgb >> 16) & 0xFF;
-	int g = (rgb >> 8) & 0xFF;
-	int b = rgb & 0xFF;
-	return vec3(r, g, b);
-}
-
-uint32_t vec3ToColour(vec3 rgb)
-{
-	uint32_t colour = (255 << 24) + (int(rgb.x) << 16) + (int(rgb.y) << 8) + int(rgb.z);
-	return colour;
-}
-
 void update()
 {
 	// Function for performing animation (shifting artifacts or moving the camera)
 }
 
-void draw(ObjContent obj)
+void draw(OBJ obj)
 {
 	if (MODE == 0)
 	{

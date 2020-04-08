@@ -1,5 +1,6 @@
 #ifndef COLOUR_H
 #define COLOUR_H
+#include <glm/glm.hpp>
 #include <iostream>
 
 #define AMBIENCE 0.2f
@@ -13,7 +14,6 @@ public:
   int green;
   int blue;
   float brightness;
-  // mirrorness = reflectivity
   float mirrorness;
   float refractivity;
 
@@ -21,29 +21,41 @@ public:
   {
     brightness = AMBIENCE;
   }
+  
   Colour(glm::vec3 rgb)
   {
     name = "";
-    brightness = 1.0f;
     red = rgb.x;
     green = rgb.y;
     blue = rgb.z;
+    brightness = 1.0f;
   }
+
   Colour(int r, int g, int b)
   {
     name = "";
-    brightness = 1.0f;
     red = r;
     green = g;
     blue = b;
+    brightness = 1.0f;
   }
+
+  Colour(std::string n, int r, int g, int b)
+  {
+    name = n;
+    red = r;
+    green = g;
+    blue = b;
+    brightness = 1.0f;
+  }
+
   Colour(int r, int g, int b, float bri)
   {
     name = "";
-    brightness = bri;
     red = r;
     green = g;
     blue = b;
+    brightness = bri;
   }
 
   Colour(std::string n, int r, int g, int b, float bri)
@@ -52,35 +64,31 @@ public:
     red = r;
     green = g;
     blue = b;
-  }
-  Colour(std::string n, int r, int g, int b)
-  {
-    name = n;
-
-    red = r;
-    green = g;
-    blue = b;
+    brightness = bri;
   }
 
-  Colour averageWith(Colour col2)
-  {
-    float bri = (brightness + col2.brightness) / 2;
-    int r = (red * red + col2.red * col2.red) / 2;
-    int g = (green * green + col2.green * col2.green) / 2;
-    int b = (blue * blue + col2.blue * col2.blue) / 2;
-    return Colour(sqrt(r), sqrt(g), sqrt(b), bri);
-  }
   void setMirrorness(float mi)
   {
     mirrorness = mi;
   }
+
   void setRefractivity(float re)
   {
     refractivity = re;
   }
-  void setBrightness(float bri)
+
+  void setBrightness(float br)
   {
-    brightness = bri;
+    brightness = br;
+  }
+
+  Colour average(Colour col)
+  {
+    float bri = (brightness + col.brightness) / 2;
+    int r = (red * red + col.red * col.red) / 2;
+    int g = (green * green + col.green * col.green) / 2;
+    int b = (blue * blue + col.blue * col.blue) / 2;
+    return Colour(sqrt(r), sqrt(g), sqrt(b), bri);
   }
 
   uint32_t pack()

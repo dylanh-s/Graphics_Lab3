@@ -1,6 +1,7 @@
 #ifndef CANVASTRIANGLE_H
 #define CANVASTRIANGLE_H
 #include "CanvasPoint.h"
+#include "Colour.h"
 #include <iostream>
 
 class CanvasTriangle

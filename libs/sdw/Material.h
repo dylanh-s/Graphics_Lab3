@@ -1,11 +1,14 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
-#include <iostream>
+#include "CanvasTriangle.h"
+#include "Texture.h"
 #include <glm/glm.hpp>
-#include <PpmContent.h>
-#include <CanvasTriangle.h>
+#include <iostream>
 
-class Material
+using namespace std;
+using namespace glm;
+
+class MTL
 {
 private:
 	glm::vec3 uintToVec3(uint32_t rgb)
@@ -15,6 +18,7 @@ private:
 		int b = rgb & 0xFF;
 		return glm::vec3(r, g, b);
 	}
+
 	bool getKa(float u, float v, glm::vec3 &col)
 	{
 		// printf("ka\n");
@@ -24,10 +28,6 @@ private:
 			int H = Ka_ppm->height;
 			float x = u * (W - 1);
 			float y = v * (H - 1);
-			// printf("W = %i\n", W - 1);
-			// printf("H = %i\n", H - 1);
-			// printf("U = %f\n", u);
-			// printf("V = %f\n", v);
 			uint32_t uint_col = Ka_ppm->image[y][x];
 			col = uintToVec3(uint_col);
 			glm::vec3 col_mul = (col / 255.0f) * (Ka / 255.0f);
@@ -39,6 +39,7 @@ private:
 			return -1;
 		}
 	}
+
 	bool getKd(float u, float v, glm::vec3 &col)
 	{
 		// printf("kd\n");
@@ -48,10 +49,8 @@ private:
 			int H = Kd_ppm->height;
 			float x = u * (W - 1);
 			float y = v * (H - 1);
-
 			uint32_t uint_col = Kd_ppm->image[y][x];
 			col = uintToVec3(uint_col);
-			// std::cout << col << std::endl;
 			glm::vec3 col_mul = (col / 255.0f) * (Kd / 255.0f);
 			col = col_mul * 255.0f;
 			return 0;
@@ -61,9 +60,10 @@ private:
 			return -1;
 		}
 	}
+
 	bool getKs(float u, float v, glm::vec3 &col)
 	{
-		// printf("kd\n");
+		// printf("ks\n");
 		if (Ks_is_texture)
 		{
 			int W = Ks_ppm->width;
@@ -84,24 +84,25 @@ private:
 
 public:
 	std::string name;
+	
 	glm::vec3 Ka;
 	bool Ka_is_texture = false;
-	PpmContent *Ka_ppm;
+	PPM *Ka_ppm;
 
 	glm::vec3 Kd;
 	bool Kd_is_texture = false;
-	PpmContent *Kd_ppm;
+	PPM *Kd_ppm;
 
 	glm::vec3 Ks;
 	bool Ks_is_texture = false;
-	PpmContent *Ks_ppm;
+	PPM *Ks_ppm;
 
 	float specularExponent = 100.0f;
 	float mirrorness = 0.0f;
 
-	Material() {}
+	MTL() {}
 
-	Material(std::string n)
+	MTL(std::string n)
 	{
 		name = n;
 	}
@@ -111,11 +112,13 @@ public:
 		// Ka_is_texture = false;
 		Ka = col;
 	}
+
 	void setKdToColour(glm::vec3 col)
 	{
 		// Kd_is_texture = false;
 		Kd = col;
 	}
+
 	void setKsToColour(glm::vec3 col)
 	{
 		// Ks_is_texture = false;
@@ -127,21 +130,24 @@ public:
 		specularExponent = exp;
 	}
 
-	void setKaToTexture(PpmContent *ppm)
+	void setKaToTexture(PPM *ppm)
 	{
 		Ka_is_texture = true;
 		Ka_ppm = ppm;
 	}
-	void setKdToTexture(PpmContent *ppm)
+
+	void setKdToTexture(PPM *ppm)
 	{
 		Kd_is_texture = true;
 		Kd_ppm = ppm;
 	}
-	void setKsToTexture(PpmContent *ppm)
+
+	void setKsToTexture(PPM *ppm)
 	{
 		Ks_is_texture = true;
 		Ks_ppm = ppm;
 	}
+
 	bool getKa(glm::vec3 &col)
 	{
 		if (Ka_is_texture)
@@ -156,6 +162,7 @@ public:
 			return 0;
 		}
 	}
+
 	bool getKd(glm::vec3 &col)
 	{
 		if (Kd_is_texture)
@@ -170,6 +177,7 @@ public:
 			return 0;
 		}
 	}
+
 	bool getKs(glm::vec3 &col)
 	{
 		if (Ks_is_texture)
@@ -200,10 +208,9 @@ public:
 		glm::vec2 v_tex = v * (v2 - v0);
 
 		glm::vec2 point_texture = (u_tex + v_tex) + v0;
-		// printf("point_texture = %f,%f\n", point_texture.x, point_texture.y);
-		glm::vec3 toReturn;
-		getKa(point_texture.x, point_texture.y, toReturn);
-		col = toReturn;
+		glm::vec3 Kacol;
+		getKa(point_texture.x, point_texture.y, Kacol);
+		col = Kacol;
 		return 0;
 	}
 
@@ -222,11 +229,12 @@ public:
 		glm::vec2 v_tex = v * (v2 - v0);
 
 		glm::vec2 point_texture = (u_tex + v_tex) + v0;
-		glm::vec3 toReturn;
-		getKd(point_texture.x, point_texture.y, toReturn);
-		col = toReturn;
+		glm::vec3 Kdcol;
+		getKd(point_texture.x, point_texture.y, Kdcol);
+		col = Kdcol;
 		return 0;
 	}
+
 	bool getKs(float u, float v, CanvasTriangle tri, glm::vec3 &col)
 	{
 		if (!Ks_is_texture)
@@ -242,12 +250,10 @@ public:
 		glm::vec2 v_tex = v * (v2 - v0);
 
 		glm::vec2 point_texture = (u_tex + v_tex) + v0;
-		// printf("point_texture = %f,%f\n", point_texture.x, point_texture.y);
-		glm::vec3 toReturn;
-		getKs(point_texture.x, point_texture.y, toReturn);
-		col = toReturn;
+		glm::vec3 Kscol;
+		getKs(point_texture.x, point_texture.y, Kscol);
+		col = Kscol;
 		return 0;
 	}
 };
-
 #endif

@@ -1,16 +1,14 @@
 #ifndef MODELTRIANGLE_H
 #define MODELTRIANGLE_H
-#include <glm/glm.hpp>
-#include "Colour.h"
 #include "Material.h"
-#include <string>
+#include <glm/glm.hpp>
+#include <iostream>
 
 class ModelTriangle
 {
 public:
   glm::vec3 vertices[3];
-  // Colour colour;
-  Material material;
+  MTL mtl;
 
   ModelTriangle()
   {
@@ -20,17 +18,14 @@ public:
     vertices[0] = v0;
     vertices[1] = v1;
     vertices[2] = v2;
-    // colour = trigColour;
-    // material = trigmtl;
   }
 
-  ModelTriangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, Material trigmtl)
+  ModelTriangle(glm::vec3 v0, glm::vec3 v1, glm::vec3 v2, MTL trimtl)
   {
     vertices[0] = v0;
     vertices[1] = v1;
     vertices[2] = v2;
-    // colour = trigColour;
-    material = trigmtl;
+    mtl = trimtl;
   }
 };
 
