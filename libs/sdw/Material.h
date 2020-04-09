@@ -1,7 +1,8 @@
 #ifndef MATERIAL_H
 #define MATERIAL_H
-#include "CanvasTriangle.h"
+#include "TextureTriangle.h"
 #include "Texture.h"
+#include "Colour.h"
 #include <glm/glm.hpp>
 #include <iostream>
 
@@ -11,7 +12,7 @@ using namespace glm;
 class MTL
 {
 private:
-	glm::vec3 uintToVec3(uint32_t rgb)
+	glm::vec3 intToVec(uint32_t rgb)
 	{
 		int r = (rgb >> 16) & 0xFF;
 		int g = (rgb >> 8) & 0xFF;
@@ -29,7 +30,7 @@ private:
 			float x = u * (W - 1);
 			float y = v * (H - 1);
 			uint32_t uint_col = Ka_ppm->image[y][x];
-			col = uintToVec3(uint_col);
+			col = intToVec(uint_col);
 			glm::vec3 col_mul = (col / 255.0f) * (Ka / 255.0f);
 			col = col_mul * 255.0f;
 			return 0;
@@ -50,7 +51,7 @@ private:
 			float x = u * (W - 1);
 			float y = v * (H - 1);
 			uint32_t uint_col = Kd_ppm->image[y][x];
-			col = uintToVec3(uint_col);
+			col = intToVec(uint_col);
 			glm::vec3 col_mul = (col / 255.0f) * (Kd / 255.0f);
 			col = col_mul * 255.0f;
 			return 0;
@@ -71,7 +72,7 @@ private:
 			float x = u * (W - 1);
 			float y = v * (H - 1);
 			uint32_t uint_col = Ks_ppm->image[y][x];
-			col = uintToVec3(uint_col);
+			col = intToVec(uint_col);
 			glm::vec3 col_mul = (col / 255.0f) * (Ks / 255.0f);
 			col = col_mul * 255.0f;
 			return 0;
@@ -193,7 +194,7 @@ public:
 		}
 	}
 
-	bool getKa(float u, float v, CanvasTriangle tri, glm::vec3 &col)
+	bool getKa(float u, float v, TextureTriangle tri, glm::vec3 &col)
 	{
 		if (!Ka_is_texture)
 		{
@@ -214,7 +215,7 @@ public:
 		return 0;
 	}
 
-	bool getKd(float u, float v, CanvasTriangle tri, glm::vec3 &col)
+	bool getKd(float u, float v, TextureTriangle tri, glm::vec3 &col)
 	{
 		if (!Kd_is_texture)
 		{
@@ -235,7 +236,7 @@ public:
 		return 0;
 	}
 
-	bool getKs(float u, float v, CanvasTriangle tri, glm::vec3 &col)
+	bool getKs(float u, float v, TextureTriangle tri, glm::vec3 &col)
 	{
 		if (!Ks_is_texture)
 		{

@@ -1,10 +1,10 @@
-// #include "Rasterizer.h"
+#include "Rasterizer.h"
 #include "Raytracer.h"
 
 using namespace std;
 using namespace glm;
 
-int MODE = 2;
+int MODE = 1;
 
 void update();
 void draw(OBJ obj);
@@ -38,11 +38,11 @@ void draw(OBJ obj)
 {
 	if (MODE == 0)
 	{
-		// drawFrame(obj);
+		drawFrame(obj);
 	}
 	else if (MODE == 1)
 	{
-		// drawRaster(obj);
+		drawRaster(obj);
 	}
 	else if (MODE == 2)
 	{

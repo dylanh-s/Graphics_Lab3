@@ -21,9 +21,9 @@ CanvasPoint projectPoint(vec3 p)
 	return CanvasPoint((p.x / -p.z) * FOCAL_LENGTH + w, (p.y / p.z) * FOCAL_LENGTH + h, 1 / p.z);
 }
 
-CanvasTriangle projectTriangle(ModelTriangle t)
+CanvasTriangle projectTriangle(ModelTriangle tri)
 {
-	return (CanvasTriangle(projectPoint(t.vertices[0]), projectPoint(t.vertices[1]), projectPoint(t.vertices[2]), t.colour));
+	return CanvasTriangle(projectPoint(tri.vertices[0]), projectPoint(tri.vertices[1]), projectPoint(tri.vertices[2]), Colour(tri.mtl.Kd));
 }
 
 std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end)

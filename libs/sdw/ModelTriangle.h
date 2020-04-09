@@ -4,6 +4,9 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
+using namespace std;
+using namespace glm;
+
 class ModelTriangle
 {
 public:

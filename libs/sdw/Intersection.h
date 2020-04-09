@@ -3,6 +3,9 @@
 #include <glm/glm.hpp>
 #include <iostream>
 
+using namespace std;
+using namespace glm;
+
 class Intersection
 {
 public:

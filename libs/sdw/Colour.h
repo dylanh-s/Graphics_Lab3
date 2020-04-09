@@ -31,18 +31,36 @@ public:
     brightness = 1.0f;
   }
 
-  Colour(int r, int g, int b)
+  Colour(glm::vec3 rgb, float bri)
   {
     name = "";
-    red = r;
-    green = g;
-    blue = b;
+    red = rgb.x;
+    green = rgb.y;
+    blue = rgb.z;
+    brightness = bri;
+  }
+
+  Colour(std::string n, glm::vec3 rgb)
+  {
+    name = n;
+    red = rgb.x;
+    green = rgb.y;
+    blue = rgb.z;
     brightness = 1.0f;
   }
 
-  Colour(std::string n, int r, int g, int b)
+  Colour(std::string n, glm::vec3 rgb, float bri)
   {
     name = n;
+    red = rgb.x;
+    green = rgb.y;
+    blue = rgb.z;
+    brightness = bri;
+  }
+
+  Colour(int r, int g, int b)
+  {
+    name = "";
     red = r;
     green = g;
     blue = b;
@@ -56,6 +74,15 @@ public:
     green = g;
     blue = b;
     brightness = bri;
+  }
+
+  Colour(std::string n, int r, int g, int b)
+  {
+    name = n;
+    red = r;
+    green = g;
+    blue = b;
+    brightness = 1.0f;
   }
 
   Colour(std::string n, int r, int g, int b, float bri)

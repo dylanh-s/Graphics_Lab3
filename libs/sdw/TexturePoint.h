@@ -17,10 +17,6 @@ public:
     x = xPos;
     y = yPos;
   }
-
-  void print()
-  {
-  }
 };
 
 std::ostream &operator<<(std::ostream &os, const TexturePoint &point)

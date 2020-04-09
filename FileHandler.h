@@ -194,10 +194,10 @@ OBJ mtlRead(string filename)
 OBJ objRead(string filename)
 {
 	OBJ obj;
+	MTL mtl;
 	vector<vec3> vertices;
 	vector<TexturePoint> texturePoints;
 	string line;
-	MTL mtl;
 	std::ifstream in(filename, std::ios::in);
 	if (!in)
 	{
@@ -250,7 +250,7 @@ OBJ objRead(string filename)
 				B--;
 				C--;
 				ModelTriangle tri = ModelTriangle(vertices.at(A), vertices.at(B), vertices.at(C), mtl);
-				CanvasTriangle tex_tri = CanvasTriangle(texturePoints.at(At), texturePoints.at(Bt), texturePoints.at(Ct));
+				TextureTriangle tex_tri = TextureTriangle(texturePoints.at(At), texturePoints.at(Bt), texturePoints.at(Ct));
 				obj.addTextureTri(tex_tri);
 				obj.addFace(tri);
 			}

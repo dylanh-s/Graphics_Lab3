@@ -7,18 +7,26 @@
 class CanvasTriangle
 {
 public:
-  TexturePoint vertices[3];
+  CanvasPoint vertices[3];
   Colour colour;
 
   CanvasTriangle()
   {
   }
 
-  CanvasTriangle(TexturePoint v0, TexturePoint v1, TexturePoint v2)
+  CanvasTriangle(CanvasPoint v0, CanvasPoint v1, CanvasPoint v2)
   {
     vertices[0] = v0;
     vertices[1] = v1;
     vertices[2] = v2;
+    colour = Colour(255,255,255);
+  }
+  CanvasTriangle(CanvasPoint v0, CanvasPoint v1, CanvasPoint v2, Colour c)
+  {
+    vertices[0] = v0;
+    vertices[1] = v1;
+    vertices[2] = v2;
+    colour = c;
   }
 };
 

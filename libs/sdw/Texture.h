@@ -3,9 +3,6 @@
 #include <iostream>
 #include <vector>
 
-using namespace std;
-using namespace glm;
-
 class PPM
 {
 public:

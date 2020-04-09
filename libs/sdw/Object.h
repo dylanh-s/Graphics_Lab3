@@ -18,7 +18,7 @@ public:
 		ppms.reserve(10);
 	}
 	std::vector<ModelTriangle> faces;
-	std::vector<CanvasTriangle> textureTris;
+	std::vector<TextureTriangle> textureTris;
 	std::unordered_map<std::string, MTL> mtls;
 	std::vector<PPM> ppms;
 	int max = 0;
@@ -28,7 +28,7 @@ public:
 		faces.push_back(face);
 	}
 
-	void addTextureTri(CanvasTriangle tex)
+	void addTextureTri(TextureTriangle tex)
 	{
 		textureTris.push_back(tex);
 	}
