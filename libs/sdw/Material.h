@@ -98,7 +98,7 @@ public:
 	bool Ks_is_texture = false;
 	PPM *Ks_ppm;
 
-	float specularExponent = 100.0f;
+	float specularity = 100.0f;
 	float mirrorness = 0.0f;
 
 	MTL() {}
@@ -126,9 +126,9 @@ public:
 		Ks = col;
 	}
 
-	void setSpecularExponent(float exp)
+	void setSpecularity(float exp)
 	{
-		specularExponent = exp;
+		specularity = exp;
 	}
 
 	void setKaToTexture(PPM *ppm)

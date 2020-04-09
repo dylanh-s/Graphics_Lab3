@@ -4,8 +4,6 @@
 using namespace std;
 using namespace glm;
 
-int MODE = 1;
-
 void update();
 void draw(OBJ obj);
 void handleEvent(SDL_Event event);
@@ -14,6 +12,8 @@ int main(int argc, char *argv[])
 {
 	SDL_Event event;
 	OBJ obj = objRead("./inputs/logo.obj");
+	lights.push_back(vec3(412.000000, 230.000000, 100.000000));
+
 	int n = 1;
 	while (true)
 	{
@@ -22,8 +22,7 @@ int main(int argc, char *argv[])
 		update();
 		draw(obj);
 		window.renderFrame();
-		if (n <= 1)
-			ppmWrite(n);
+		// ppmWrite(n);
 		cout << "frame" << n << "\n";
 		n++;
 	}
@@ -36,35 +35,29 @@ void update()
 
 void draw(OBJ obj)
 {
-	if (MODE == 0)
+	if (mode == 0)      // Frame
 	{
 		drawFrame(obj);
 	}
-	else if (MODE == 1)
+	else if (mode == 1) // Raster
 	{
 		drawRaster(obj);
 	}
-	else if (MODE == 2)
+	else if (mode == 2) // Raytrace
 	{
-		// solid shadows
-		drawRaytrace(obj, MODE);
+		drawRaytrace(obj);
 	}
-	else if (MODE == 3)
+	else if (mode == 3) // Raytrace + hard shadows
 	{
-		// soft shadows
-		// and anti-aliasing
-		drawRaytraceWithAA(obj, MODE);
+		drawRaytrace(obj);
 	}
-	else if (MODE == 4)
+	else if (mode == 4) // Raytrace + soft shadows
 	{
-		// no shadows
-		drawRaytrace(obj, MODE);
+		drawRaytrace(obj);
 	}
-	else if (MODE == 69)
+	else if (mode == 5) // Raytrace + soft shadows + anti-aliasing
 	{
-		// no shadows
-		drawRaytrace(obj, MODE);
-		// ObjContentTexture objTex = objReadTexture("logo.obj");
+		drawRaytrace(obj);
 	}
 }
 
@@ -95,12 +88,12 @@ void handleEvent(SDL_Event event)
 		else if (event.key.keysym.sym == SDLK_m)
 		{
 			window.clearPixels();
-			MODE = (MODE + 1) % 5;
+			mode = (mode + 1) % 6;
 		}
 		else if (event.key.keysym.sym == SDLK_n)
 		{
 			window.clearPixels();
-			MODE = (MODE - 1) % 5;
+			mode = (mode - 1) % 6;
 		}
 		else if (event.key.keysym.sym == SDLK_a)
 		{
@@ -165,7 +158,7 @@ void handleEvent(SDL_Event event)
 		else if (event.key.keysym.sym == SDLK_l)
 		{
 			window.clearPixels();
-			lookCamera(vec3(0.415989, 5.218497, -3.567968));
+			lookCamera(vec3(0, 0, 0));
 		}
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)

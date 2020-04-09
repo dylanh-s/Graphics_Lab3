@@ -17,13 +17,14 @@ using namespace glm;
 #define HEIGHT 250
 #define DELTA 25
 #define THETA 0.3
-#define FOCAL_LENGTH HEIGHT / 2
+#define FOCAL_LENGTH WIDTH / 2
 
+int mode = 5;
 int w = WIDTH / 2;
 int h = HEIGHT / 2;
-
-vec3 CAMERA_POS(200, 200, 400);
-mat3 CAMERA_ROT(1, 0, 0, 0, 1, 0, 0, 0, 1);
+vector<vec3> lights;
+vec3 cameraPosition(200, 200, 400);
+mat3 cameraRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 
 void ppmWrite(int n);
@@ -156,7 +157,7 @@ OBJ mtlRead(string filename)
 			else if (line.substr(0, 2) == "Ns")
 			{
 				string *token = split(line, ' ');
-				mtl.setSpecularExponent(stof(token[1]));
+				mtl.setSpecularity(stof(token[1]));
 			}
 			else if (line.substr(0, 3) == "Mir")
 			{

@@ -5,8 +5,8 @@
 using namespace std;
 using namespace glm;
 
-CanvasPoint projectPoint(vec3 p);
-CanvasTriangle projectTriangle(ModelTriangle t);
+CanvasPoint projectPoint(vec3 point);
+CanvasTriangle projectTriangle(ModelTriangle tri);
 std::vector<CanvasPoint> calculateLine(CanvasPoint start, CanvasPoint end);
 void drawLine(CanvasPoint start, CanvasPoint end, Colour colour);
 void drawStrokedTriangle(CanvasTriangle tri);
@@ -15,10 +15,10 @@ void drawFrame(OBJ obj);
 void drawRaster(OBJ obj);
 void drawTexture(PPM ppm);
 
-CanvasPoint projectPoint(vec3 p)
+CanvasPoint projectPoint(vec3 point)
 {
-	p = (p - CAMERA_POS) * CAMERA_ROT;
-	return CanvasPoint((p.x / -p.z) * FOCAL_LENGTH + w, (p.y / p.z) * FOCAL_LENGTH + h, 1 / p.z);
+	point = (point - cameraPosition) * cameraRotation;
+	return CanvasPoint((point.x / -point.z) * FOCAL_LENGTH + w, (point.y / point.z) * FOCAL_LENGTH + h, 1 / point.z);
 }
 
 CanvasTriangle projectTriangle(ModelTriangle tri)

@@ -5,64 +5,55 @@
 using namespace std;
 using namespace glm;
 
-vector<vec3> LIGHTS;
-int SHADOW_MODE;
-
+vec3 getReflectedRay(vec3 planeNormal, vec3 viewRay);
+uint getLightsInShadow(OBJ obj, vector<vec3> lightSources, vec3 point, vec3 ray, uint triIndex);
+float getShadowProportion(OBJ obj, vector<vec3> lightSources, vec3 planeNormal, vec3 point, vec3 ray, uint triIndex);
+vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point, vec3 ray, vec3 Ka, vec3 Kd, vec3 Ks, float spec);
 Intersection getClosestIntersection(OBJ obj, PPM ppm, vec3 ray);
 void drawRaytraces(OBJ obj);
-vec3 getReflectedRay(vec3 planeNormal, vec3 viewRay);
-
-vec3 uintToVec3(uint32_t rgb)
-{
-	int r = (rgb >> 16) & 0xFF;
-	int g = (rgb >> 8) & 0xFF;
-	int b = rgb & 0xFF;
-	return vec3(r, g, b);
-}
 
 vec3 getReflectedRay(vec3 planeNormal, vec3 viewRay)
 {
 	planeNormal = normalize(planeNormal);
 	if (dot(viewRay, planeNormal) > 0.0f)
 	{
-		planeNormal = -1.f * planeNormal;
+		planeNormal = -1.0f * planeNormal;
 	}
 	else
 	{
-		viewRay = -1.f * viewRay;
+		viewRay = -1.0f * viewRay;
 	}
 	vec3 reflection = viewRay - (2.0f * dot(planeNormal, viewRay) * planeNormal);
 	return normalize(reflection);
 }
 
-int countShadows(OBJ obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray, int triangleIndex)
+uint getLightsInShadow(OBJ obj, vector<vec3> lightSources, vec3 point, vec3 ray, uint triIndex)
 {
-	int lightsInShadowOf = 0;
+	uint lightsInShadow = 0;
 #pragma omp parallel
 #pragma omp for
-	for (int l = 0; l < lightSources.size(); l++)
+	for (uint l = 0; l < lightSources.size(); l++)
 	{
-		vec3 shadowRay = lightSources.at(l) - pointInWorld;
-		// shadowRay = normalize(shadowRay);
+		vec3 shadowRay = lightSources.at(l) - point;
 		float distanceToLight = length(shadowRay);
+		
 		bool inShadow = 0;
 		for (uint c = 0; c < obj.faces.size(); c++)
 		{
-			ModelTriangle triangle = ModelTriangle(obj.faces[c].vertices[0], obj.faces[c].vertices[1], obj.faces[c].vertices[2], MTL());
-
-			vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
-			vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
-			vec3 SPVector = (pointInWorld - triangle.vertices[0]);
-			mat3 DEMatrix(-normalize(shadowRay), e0, e1);
-			vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
+			ModelTriangle tri = ModelTriangle(obj.faces[c].vertices[0], obj.faces[c].vertices[1], obj.faces[c].vertices[2], MTL());
+			// calculate shadow ray intersection
+			vec3 eu = tri.vertices[1] - tri.vertices[0];
+			vec3 ev = tri.vertices[2] - tri.vertices[0];
+			vec3 sp = (point - tri.vertices[0]);
+			mat3 de(-normalize(shadowRay), eu, ev);
+			vec3 possibleSolution = glm::inverse(de) * sp;
 
 			float t = possibleSolution.x;
 			float u = possibleSolution.y;
 			float v = possibleSolution.z;
-			// t,u,v is valid
-			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.4f && c != triangleIndex)
+			
+			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.4f && c != triIndex)
 			{
-				// printf("%f\n", t);
 				if (t < (distanceToLight) && (abs(t - distanceToLight) > 0.01f))
 				{
 					inShadow = true;
@@ -72,98 +63,80 @@ int countShadows(OBJ obj, vector<vec3> lightSources, vec3 pointInWorld, vec3 ray
 		}
 		if (inShadow)
 		{
-			lightsInShadowOf += 1;
+			lightsInShadow += 1;
 		}
 	}
-	return lightsInShadowOf;
+	return lightsInShadow;
 }
 
-float getShadowProportionForSoftShadows(OBJ obj, vector<vec3> lightSources, vec3 planeNormal, vec3 pointInWorld, vec3 ray, int triangleIndex)
+float getShadowProportion(OBJ obj, vector<vec3> lightSources, vec3 planeNormal, vec3 point, vec3 ray, uint triIndex)
 {
+	uint shadows = 0;
 	float totalShift = 0.1f;
 	vec3 shift = totalShift * normalize(planeNormal);
-	uint shadows = 0;
-	// shift virtual plane up
-	shadows += countShadows(obj, LIGHTS, pointInWorld + shift, ray, triangleIndex);
-	// shift virtual plane down
-	shadows += countShadows(obj, LIGHTS, pointInWorld - shift, ray, triangleIndex);
-	shadows += countShadows(obj, LIGHTS, pointInWorld, ray, triangleIndex);
+	shadows += getLightsInShadow(obj, lights, point, ray, triIndex);
+	shadows += getLightsInShadow(obj, lights, point + shift, ray, triIndex);
+	shadows += getLightsInShadow(obj, lights, point - shift, ray, triIndex);
+
 	float shadeProportion = 0.0f;
-	// all levels in shade (lowest brightness)
-	if (shadows == (lightSources.size() * 3))
+	if (shadows == (lightSources.size() * 3)) // all levels in shade
 	{
 		shadeProportion = 1.0f;
 	}
-	// no levels in shade (dont change brightness)
-	else if (shadows == 0)
+	else if (shadows == 0)                    // no levels in shade
 	{
 		shadeProportion = 0.0f;
 	}
-	// some levels in shade (calculate proportion of shadow)
-	else
+	else                                      // some levels in shade
 	{
-		float thisShift = -1.0f * totalShift;
-		// increment shift until shadows = 0
+		float shift = -1.0f * totalShift;
 		while (shadows >= 1)
 		{
-			thisShift += 0.02f;
-			shadows = countShadows(obj, LIGHTS, pointInWorld + (thisShift * normalize(planeNormal)), ray, triangleIndex);
+			shift += 0.02f;
+			shadows = getLightsInShadow(obj, lights, point + (shift * normalize(planeNormal)), ray, triIndex);
 		}
-		// find value of shade between 0 -> light and 1 -> dark
-		shadeProportion = (thisShift + totalShift) / (totalShift * 2.0f);
+		shadeProportion = (shift + totalShift) / (totalShift * 2.0f);
 	}
 	return shadeProportion;
 }
 
-vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray, vec3 Ka, vec3 Kd, vec3 Ks, float sExp)
+vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point, vec3 ray, vec3 Ka, vec3 Kd, vec3 Ks, float spec)
 {
-	vec3 Ip = vec3(20.0, 20.0, 20.0); // intensity at light source point (must be high for logo model)
-	// vec3 Ip = vec3(1.0f, 1.0f, 1.0f);	 // intensity at light source point (must be low for cornell box)
+	vec3 Ip = vec3(20.0f, 20.0f, 20.0f); // point intensity
 	vec3 Ia = vec3(0.05f, 0.05f, 0.05f); // ambient intensity
-	vec3 I = vec3(1.0f, 1.0f, 1.0f);	 // final intensity
-	for (int i = 0; i < lightSources.size(); i++)
+	vec3 I  = vec3(1.00f, 1.00f, 1.00f); // final intensity
+
+	for (uint l = 0; l < lightSources.size(); l++)
 	{
-		vec3 lightVec = (LIGHTS.at(i) - point_in_world);
-
-		// f defines the light dropoff behaviour with distance. What you use depends on scale of the model.
-		// This is one way to tune lighting in the scene, it has a really large impact on outcome.
-
-		// float f = (1 / (4 * M_PI * length(lightVec) * length(lightVec))); // original 1/4*pi*d^2 - doesnt look good
-		// float f = 9 / (M_PI * length(lightVec)); // this is ok for a moody cornell box
-		float f = 10 / length(lightVec); // this is ok for a moody logo
+		vec3 lightVec = (lights.at(l) - point);
+		float lightDropOff = 10 / length(lightVec); // (1 / (4 * M_PI * length(lightVec) * length(lightVec)))
 
 		// Ambient
 		vec3 ambient = Ia * Ka;
-		// cout << "ambient" << ambient << endl;
 
 		// Lambert
 		vec3 normal = normalize(planeNormal);
-		float light_dot_normal = dot(normalize(lightVec), normal);
-		if (light_dot_normal < 0.0f)
+		float lightDotNormal = dot(normalize(lightVec), normal);
+		if (lightDotNormal < 0.0f)
 		{
-			normal *= -1.f;
-			light_dot_normal = dot(normalize(lightVec), normal);
+			normal *= -1.0f;
+			lightDotNormal = dot(normalize(lightVec), normal);
 		}
-		vec3 lambert = f * Ip * Kd * light_dot_normal;
-		// cout << "lambert" << lambert << endl;
+		vec3 lambert = lightDropOff * Ip * Kd * lightDotNormal;
 
 		// Phong
+		vec3 phong;
 		vec3 flipRay = -1.0f * ray;
 		vec3 reflection = lightVec - (2.0f * (dot(lightVec, normalize(planeNormal)) * normalize(planeNormal)));
-		float reflection_dot_view = dot(normalize(reflection), normalize(flipRay));
-		vec3 phong;
-		if (reflection_dot_view < 0.0f)
+		float reflectionDotView = dot(normalize(reflection), normalize(flipRay));
+		if (reflectionDotView < 0.0f) // no reflection
 		{
-			// no reflection
 			phong = vec3(0.0f, 0.0f, 0.0f);
 		}
-		else
+		else                          // reflection
 		{
-			// reflection
-			// (we raise dot product to the power of specular exponent (Ns in MTL file, 100 by default) - higher value for a tighter reflection)
-			phong = f * Ip * Ks * pow(reflection_dot_view, sExp);
+			phong = lightDropOff * Ip * Ks * pow(reflectionDotView, spec);
 		}
-		// cout << "phong" << phong << endl;
 
 		I = I * (ambient + lambert + phong);
 		if (I.x > 255.0f)
@@ -182,110 +155,54 @@ vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in
 	return I;
 }
 
-// DEPRECATED - NO LONGER USED
-float getBrightness(vector<vec3> lightSources, vec3 planeNormal, vec3 point_in_world, vec3 ray)
-{
-	float brightnessIncrease;
-	// f = 1/(4pi*d^2)
-	// vec3 I = Ia * Ka + (f * Ip * Kd(dot(lightVec,plane))) + f*Ip*Ks*dot(reflection,flipRay)^Ni
-
-	for (int i = 0; i < lightSources.size(); i++)
-	{
-		brightnessIncrease = 0.0f;
-		vec3 lightVec = LIGHTS.at(i) - point_in_world;
-
-		// proximity
-		brightnessIncrease += (1 / (4 * M_PI * length(lightVec) * length(lightVec)));
-
-		// incidence
-		float angle_between = dot(normalize(lightVec), normalize(planeNormal));
-		if (angle_between > 0.0f)
-		{
-			brightnessIncrease += (angle_between);
-		}
-
-		vec3 flipRay = -1.0f * ray;
-		vec3 normal = normalize(planeNormal);
-		vec3 reflection = lightVec - (2.0f * (dot(lightVec, normal)) * normal);
-		angle_between = dot(normalize(reflection), normalize(flipRay));
-		if (angle_between > 0.0f)
-		{
-			brightnessIncrease += pow(angle_between, 24.0f);
-		}
-	}
-	return brightnessIncrease;
-	// implement bottom val on colour
-
-	// proximity lighting:
-	// length of vector from light to object in 3D
-	// length is not between 0 and 1 so needs scaling. 1/(4pi*dist**2)
-
-	// incidence lighting
-	// dot the normal and light but normalised (might need -ves)
-	// check between 0-1 float
-	// increm brightness again
-
-	// specular highlighting
-	// 𝑟=𝑑−2(𝑑⋅𝑛)𝑛
-	// normal = normalize(normal)
-	// reflection=incidence-2(dot(incidence,normal))*normal
-	// brightness = dot(reflection,ray)
-}
-
-Intersection getClosestIntersection(OBJ obj, vec3 ray, vec3 startPos, int rayBouncesRemaining)
+Intersection getClosestIntersection(OBJ obj, vec3 ray, vec3 point, int rayBounces)
 {
 	Intersection closest = Intersection();
-	closest.distanceFromCamera = INFINITY;
+	closest.distanceToCamera = INFINITY;
 
-	// if (ray_bounces_remaining == 0)
-	// {
-	// 	return Intersection(vec3(1, 1, 1), 1, obj.faces[0], Colour(0, 0, 0));
-	// }
 #pragma omp parallel
 #pragma omp for
 	for (uint c = 0; c < obj.faces.size(); c++)
 	{
-		ModelTriangle triangle = obj.faces[c];
-
-		vec3 e0 = triangle.vertices[1] - triangle.vertices[0];
-		vec3 e1 = triangle.vertices[2] - triangle.vertices[0];
-		vec3 SPVector = (startPos - triangle.vertices[0]);
-		mat3 DEMatrix(-ray, e0, e1);
-		vec3 possibleSolution = glm::inverse(DEMatrix) * SPVector;
+		ModelTriangle tri = obj.faces[c];
+		// calculate light ray intersection
+		vec3 eu = tri.vertices[1] - tri.vertices[0];
+		vec3 ev = tri.vertices[2] - tri.vertices[0];
+		vec3 sp = (point - tri.vertices[0]);
+		mat3 de(-ray, eu, ev);
+		vec3 possibleSolution = glm::inverse(de) * sp;
 
 		float t = abs(possibleSolution.x);
 		float u = possibleSolution.y;
 		float v = possibleSolution.z;
-		// t,u,v is valid
+
 		if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t >= 1.0f)
 		{
-			if (t < closest.distanceFromCamera)
+			if (t < closest.distanceToCamera)
 			{
-				// find position on triangle
-				vec3 u_tri = u * (triangle.vertices[1] - triangle.vertices[0]);
-				vec3 v_tri = v * (triangle.vertices[2] - triangle.vertices[0]);
-				vec3 point_world = (u_tri + v_tri) + triangle.vertices[0];
+				vec3 u_tri = u * (tri.vertices[1] - tri.vertices[0]);
+				vec3 v_tri = v * (tri.vertices[2] - tri.vertices[0]);
+				
+				vec3 point = (u_tri + v_tri) + tri.vertices[0];
+				vec3 planeNorm = cross(eu, ev);
 
-				vec3 planeNorm = cross(e0, e1);
 				vec3 Ka;
-				triangle.mtl.getKa(u, v, obj.textureTris[c], Ka);
+				tri.mtl.getKa(u, v, obj.textureTris[c], Ka);
 				vec3 Kd;
-				triangle.mtl.getKd(u, v, obj.textureTris[c], Kd);
+				tri.mtl.getKd(u, v, obj.textureTris[c], Kd);
 				vec3 Ks;
-				triangle.mtl.getKs(u, v, obj.textureTris[c], Ks);
-				float sExp = triangle.mtl.specularExponent;
-
+				tri.mtl.getKs(u, v, obj.textureTris[c], Ks);
+				
+				float spec = tri.mtl.specularity;
 				float brightness = 1.0;
 				Colour pixelCol;
-				if (triangle.mtl.mirrorness > 0.01f && rayBouncesRemaining > 0)
+				if (tri.mtl.mirrorness > 0.01f && rayBounces > 0)
 				{
-					vec3 reflected_ray = getReflectedRay(planeNorm, ray);
-					// printf("%i\n", rayBouncesRemaining);
-					Intersection intersection = getClosestIntersection(obj, reflected_ray, point_world, rayBouncesRemaining - 1);
-					if (intersection.distanceFromCamera < INFINITY)
+					vec3 reflectedRay = getReflectedRay(planeNorm, ray);
+					Intersection intersection = getClosestIntersection(obj, reflectedRay, point, rayBounces - 1);
+					if (intersection.distanceToCamera < INFINITY)
 					{
 						pixelCol = intersection.colour;
-						// intersection.colour.setBrightness(triangle.mtl.mirrorness * intersection.colour.brightness);
 					}
 					else
 					{
@@ -294,125 +211,89 @@ Intersection getClosestIntersection(OBJ obj, vec3 ray, vec3 startPos, int rayBou
 				}
 				else
 				{
-					vec3 col = getColourOfPoint(LIGHTS, planeNorm, point_world, ray, Ka, Kd, Ks, sExp);
+					vec3 col = getColourOfPoint(lights, planeNorm, point, ray, Ka, Kd, Ks, spec);
 					pixelCol = Colour(col.x, col.y, col.z, 1.0f);
-					// hard shadows
-					if (SHADOW_MODE == 2)
+					if (mode == 3)      // hard shadows
 					{
-						int shadows = countShadows(obj, LIGHTS, point_world, ray, c);
-						if (shadows == LIGHTS.size())
+						uint shadows = getLightsInShadow(obj, lights, point, ray, c);
+						if (shadows == lights.size())
 						{
 							pixelCol.brightness = 0.2f;
 						}
 					}
-					// soft shadows
-					else if (SHADOW_MODE == 3)
+					else if (mode >= 4) // soft shadows
 					{
-						float shadeProportion = getShadowProportionForSoftShadows(obj, LIGHTS, planeNorm, point_world, ray, c);
-						//TODO this can definitely be tuned.
+						float shadeProportion = getShadowProportion(obj, lights, planeNorm, point, ray, c);
 						brightness -= pow(shadeProportion, 0.5f);
 						pixelCol.brightness = brightness;
 					}
 				}
-				closest = Intersection(point_world, t, triangle, pixelCol);
+				closest = Intersection(point, t, tri, pixelCol);
 			}
 		}
 	}
 	return closest;
 }
 
-void drawRaytrace(OBJ obj, int mode)
+void drawRaytrace(OBJ obj)
 {
-	vector<vec3> empty;
-	LIGHTS = empty;
-	SHADOW_MODE = mode;
+	vector<vec2> aliasPattern;
+	aliasPattern.push_back(vec2(0.0f, 0.0f)); 	// float foo = 10.0f;
+	aliasPattern.push_back(vec2(0.5f, 0.0f)); 	// aliasPattern.push_back(vec2(2.0f / foo, 2.0f / foo));
+	aliasPattern.push_back(vec2(-0.5f, 0.0f));  // aliasPattern.push_back(vec2(7.0f / foo, 1.0f / foo));
+	aliasPattern.push_back(vec2(0.0f, 0.5f)); 	// aliasPattern.push_back(vec2(3.0f / foo, 7.0f / foo));
+	aliasPattern.push_back(vec2(0.0f, -0.5f));  // aliasPattern.push_back(vec2(8.0f / foo, 6.0f / foo));
 
-	// lighting for cornell box
-	// vec3 a = vec3(-0.884011, 5.219334, -2.517968);
-	// vec3 b = vec3(0.415989, 5.218497, -3.567968);
-	// LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
-
-	// lighting for logo
-	LIGHTS.push_back(vec3(412.000000, 230.000000, 100.000000));
-#pragma omp parallel
-#pragma omp for
-	for (int x = 0; x <= WIDTH; x++)
-	{
-		// printf("row %i\n", x);
-		for (int y = 0; y <= HEIGHT; y++)
-		{
-			// printf("%i,\n", y);
-			// calculate direction vector
-			float xp = -(x - w);
-			float yp = (y - h);
-			vec3 ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
-			ray = glm::normalize(ray);
-			Intersection intersection = getClosestIntersection(obj, ray, CAMERA_POS, 5);
-			if (intersection.distanceFromCamera < INFINITY)
-			{
-				window.setPixelColour(x, y, -0.5, intersection.colour.pack());
-			}
-		}
-	}
-}
-
-void drawRaytraceWithAA(OBJ obj, int mode)
-{
-
-	vector<vec2> alias_pattern;
-	// corners + middle
-	alias_pattern.push_back(vec2(0.0f, 0.0f));
-	alias_pattern.push_back(vec2(0.5f, 0.0f));
-	alias_pattern.push_back(vec2(-0.5f, 0.0f));
-	alias_pattern.push_back(vec2(0.0f, 0.5f));
-	alias_pattern.push_back(vec2(0.0f, -0.5f));
-	// float foo = 10.0f;
-	// alias_pattern.push_back(vec2(2.0f / foo, 2.0f / foo));
-	// alias_pattern.push_back(vec2(7.0f / foo, 1.0f / foo));
-	// alias_pattern.push_back(vec2(3.0f / foo, 7.0f / foo));
-	// alias_pattern.push_back(vec2(8.0f / foo, 6.0f / foo));
-
-	// vec3 a = vec3(-0.884011, 5.219334, -2.517968);
-	// vec3 b = vec3(0.415989, 5.218497, -3.567968);
-	// LIGHTS.push_back(a + ((glm::length(a - b) / 3) * -(a - b)));
-	LIGHTS.push_back(vec3(412.000000, 230.000000, 100.000000));
-	vector<vec3> empty;
-	LIGHTS = empty;
-	SHADOW_MODE = mode;
 #pragma omp parallel
 #pragma omp for
 	for (int x = 0; x <= WIDTH; x++)
 	{
 		for (int y = 0; y <= HEIGHT; y++)
 		{
-			float xp = -(x - w);
-			float yp = (y - h);
-			vector<Colour> colours;
 			vec3 ray;
+			vector<Colour> colours;
 			Intersection intersection;
-			// for each subpixel in the pattern
-			for (uint a = 0; a < alias_pattern.size(); a++)
+
+			float xp = -(x - w);
+			float yp = (y - h);
+
+			if (mode != 5 ) // without anti-aliasing
 			{
-				// get ray and find colour
-				ray = vec3(xp + alias_pattern.at(a).x, yp + alias_pattern.at(a).y, FOCAL_LENGTH) * glm::inverse(CAMERA_ROT);
+				// calculate ray for each pixel
+				ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(cameraRotation);
 				ray = glm::normalize(ray);
-				intersection = getClosestIntersection(obj, ray, CAMERA_POS, 3);
-				if (intersection.distanceFromCamera < INFINITY)
+				intersection = getClosestIntersection(obj, ray, cameraPosition, 5);
+				if (intersection.distanceToCamera < INFINITY)
 				{
-					colours.push_back(intersection.colour);
+					window.setPixelColour(x, y, -0.5, intersection.colour.pack());
 				}
 			}
-			// get average of all colours
-			if (colours.size() > 0)
+			else            // with anti-aliasing 
 			{
-				Colour avgCol = colours.at(0);
-				for (uint i = 1; i < colours.size(); i++)
+				for (uint a = 0; a < aliasPattern.size(); a++)
 				{
-					Colour avgCol_prime = avgCol.average(colours.at(i));
-					avgCol = avgCol_prime;
+					// calculate ray for each sub-pixel
+					ray = vec3(xp + aliasPattern.at(a).x, yp + aliasPattern.at(a).y, FOCAL_LENGTH) * glm::inverse(cameraRotation);
+					ray = glm::normalize(ray);
+					intersection = getClosestIntersection(obj, ray, cameraPosition, 3);
+					if (intersection.distanceToCamera < INFINITY)
+					{
+						colours.push_back(intersection.colour);
+					}
 				}
-				window.setPixelColour(x, y, -0.5, avgCol.pack());
+				// average colour of each ray
+				if (colours.size() > 0)
+				{
+					Colour avgCol = colours.at(0);
+					for (uint i = 1; i < colours.size(); i++)
+					{
+						Colour avgColPrime = avgCol.average(colours.at(i));
+						avgCol = avgColPrime;
+					}
+					window.setPixelColour(x, y, -0.5, avgCol.pack());
+				}
 			}
+			
 		}
 	}
 }

@@ -10,7 +10,7 @@ class Intersection
 {
 public:
     glm::vec3 intersectionPoint;
-    float distanceFromCamera;
+    float distanceToCamera;
     ModelTriangle intersectedTriangle;
     Colour colour;
 
@@ -21,7 +21,7 @@ public:
     Intersection(glm::vec3 point, float distance, ModelTriangle triangle, Colour col)
     {
         intersectionPoint = point;
-        distanceFromCamera = distance;
+        distanceToCamera = distance;
         intersectedTriangle = triangle;
         colour = col;
     }
