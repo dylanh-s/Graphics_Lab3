@@ -16,14 +16,14 @@ using namespace glm;
 #define WIDTH 250
 #define HEIGHT 250
 #define DELTA 25
-#define THETA 0.3
+#define THETA 0.1
 #define FOCAL_LENGTH WIDTH / 2
 
-int mode = 5;
+int mode = 0;
 int w = WIDTH / 2;
 int h = HEIGHT / 2;
 vector<vec3> lights;
-vec3 cameraPosition(200, 200, 400);
+vec3 cameraPosition(0, 0, 400);
 mat3 cameraRotation(1, 0, 0, 0, 1, 0, 0, 0, 1);
 DrawingWindow window = DrawingWindow(WIDTH, HEIGHT, false);
 

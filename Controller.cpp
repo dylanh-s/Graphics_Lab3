@@ -4,33 +4,39 @@
 using namespace std;
 using namespace glm;
 
-void update();
+void update(int n);
 void draw(OBJ obj);
 void handleEvent(SDL_Event event);
 
 int main(int argc, char *argv[])
 {
+	int n = 0;
 	SDL_Event event;
-	OBJ obj = objRead("./inputs/logo.obj");
-	lights.push_back(vec3(412.000000, 230.000000, 100.000000));
-
-	int n = 1;
+	OBJ obj = objRead("./inputs/logo6.obj");
 	while (true)
 	{
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
-		update();
+		update(n);
 		draw(obj);
 		window.renderFrame();
-		// ppmWrite(n);
-		cout << "frame" << n << "\n";
 		n++;
 	}
 }
 
-void update()
+void update(int n)
 {
-	// Function for performing animation (shifting artifacts or moving the camera)
+	// cout << "frame" << n << "\n";
+	if (n == 0)
+	{
+		mode = 1;
+		// lights.push_back(vec3(412.000000, 230.000000, 100.000000));
+		lights.push_back(vec3(0.0, 0.0, 100.0));
+	}
+	else if (n == 1)
+	{
+		ppmWrite(n);
+	}
 }
 
 void draw(OBJ obj)
@@ -65,23 +71,7 @@ void handleEvent(SDL_Event event)
 {
 	if (event.type == SDL_KEYDOWN)
 	{
-		if (event.key.keysym.sym == SDLK_LEFT)
-		{
-			// cout << "LEFT" << endl;
-		}
-		else if (event.key.keysym.sym == SDLK_RIGHT)
-		{
-			// cout << "RIGHT" << endl;
-		}
-		else if (event.key.keysym.sym == SDLK_UP)
-		{
-			// cout << "UP" << endl;
-		}
-		else if (event.key.keysym.sym == SDLK_DOWN)
-		{
-			// cout << "DOWN" << endl;
-		}
-		else if (event.key.keysym.sym == SDLK_c)
+		if (event.key.keysym.sym == SDLK_c)
 		{
 			window.clearPixels();
 		}
@@ -125,12 +115,17 @@ void handleEvent(SDL_Event event)
 			window.clearPixels();
 			translateCamera(0, 0, -DELTA);
 		}
-		else if (event.key.keysym.sym == SDLK_t)
+		else if (event.key.keysym.sym == SDLK_g)
 		{
 			window.clearPixels();
-			rotateCamera(THETA, 0, 0);
+			rotateCamera(0, THETA, 0);
 		}
-		else if (event.key.keysym.sym == SDLK_g)
+		else if (event.key.keysym.sym == SDLK_j)
+		{
+			window.clearPixels();
+			rotateCamera(0, -THETA, 0);
+		}
+		else if (event.key.keysym.sym == SDLK_h)
 		{
 			window.clearPixels();
 			rotateCamera(-THETA, 0, 0);
@@ -138,19 +133,14 @@ void handleEvent(SDL_Event event)
 		else if (event.key.keysym.sym == SDLK_y)
 		{
 			window.clearPixels();
-			rotateCamera(0, THETA, 0);
+			rotateCamera(THETA, 0, 0);
 		}
-		else if (event.key.keysym.sym == SDLK_h)
-		{
-			window.clearPixels();
-			rotateCamera(0, -THETA, 0);
-		}
-		else if (event.key.keysym.sym == SDLK_u)
+		else if (event.key.keysym.sym == SDLK_t)
 		{
 			window.clearPixels();
 			rotateCamera(0, 0, THETA);
 		}
-		else if (event.key.keysym.sym == SDLK_j)
+		else if (event.key.keysym.sym == SDLK_u)
 		{
 			window.clearPixels();
 			rotateCamera(0, 0, -THETA);
@@ -159,6 +149,26 @@ void handleEvent(SDL_Event event)
 		{
 			window.clearPixels();
 			lookCamera(vec3(0, 0, 0));
+		}
+		else if (event.key.keysym.sym == SDLK_LEFT)
+		{
+			window.clearPixels();
+			orbitCamera(vec3(0, 0, -THETA));
+		}
+		else if (event.key.keysym.sym == SDLK_RIGHT)
+		{
+			window.clearPixels();
+			orbitCamera(vec3(0, 0, THETA));
+		}
+		else if (event.key.keysym.sym == SDLK_UP)
+		{
+			window.clearPixels();
+			orbitCamera(vec3(0, THETA, 0));
+		}
+		else if (event.key.keysym.sym == SDLK_DOWN)
+		{
+			window.clearPixels();
+			orbitCamera(vec3(0, -THETA, 0));
 		}
 	}
 	else if (event.type == SDL_MOUSEBUTTONDOWN)

@@ -22,8 +22,7 @@ DrawingWindow::DrawingWindow(int w, int h, bool fullscreen)
   uint32_t flags = SDL_WINDOW_OPENGL;
   if (fullscreen)
     flags |= SDL_WINDOW_FULLSCREEN_DESKTOP;
-  int ANYWHERE = SDL_WINDOWPOS_UNDEFINED;
-  window = SDL_CreateWindow("Rendering Engine", ANYWHERE, ANYWHERE, width, height, flags);
+  window = SDL_CreateWindow("Rendering Engine", 0, 0, width, height, flags);
   if (window == 0)
     printMessageAndQuit("Could not set video mode: ", SDL_GetError());
 
