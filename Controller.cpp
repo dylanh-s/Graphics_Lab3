@@ -8,8 +8,10 @@ void update(int n);
 void draw(OBJ obj);
 void handleEvent(SDL_Event event);
 
+void translateFaces(float x);
+
 int main(int argc, char *argv[])
-{
+{	
 	int n = 0;
 	SDL_Event event;
 	OBJ obj = objRead("./inputs/logo6.obj");
@@ -21,6 +23,14 @@ int main(int argc, char *argv[])
 		draw(obj);
 		window.renderFrame();
 		n++;
+		// Uncomment for spinning logo
+		// if (n % 10 == 1)
+		// {	
+		// 	vector<int> f;
+		// 	for (uint i = 0; i < obj.faces.size(); i++) // create index array of faces to pass, 
+		// 		f.push_back(i);							// so we can animate them separately
+		// 	obj.rotateOBJ(0.1, 0.1, 0.1, f); // obj.translateOBJ(25, 0.0, 0.0, f);
+		// }
 	}
 }
 
@@ -29,7 +39,7 @@ void update(int n)
 	// cout << "frame" << n << "\n";
 	if (n == 0)
 	{
-		mode = 1;
+		mode = 0;
 		// lights.push_back(vec3(412.000000, 230.000000, 100.000000));
 		lights.push_back(vec3(0.0, 0.0, 100.0));
 	}
@@ -41,6 +51,7 @@ void update(int n)
 
 void draw(OBJ obj)
 {
+	window.clearPixels();
 	if (mode == 0)      // Frame
 	{
 		drawFrame(obj);
@@ -77,102 +88,79 @@ void handleEvent(SDL_Event event)
 		}
 		else if (event.key.keysym.sym == SDLK_m)
 		{
-			window.clearPixels();
 			mode = (mode + 1) % 6;
 		}
 		else if (event.key.keysym.sym == SDLK_n)
 		{
-			window.clearPixels();
 			mode = (mode - 1) % 6;
 		}
 		else if (event.key.keysym.sym == SDLK_a)
 		{
-			window.clearPixels();
 			translateCamera(DELTA, 0, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_d)
 		{
-			window.clearPixels();
 			translateCamera(-DELTA, 0, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_s)
 		{
-			window.clearPixels();
 			translateCamera(0, DELTA, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_w)
 		{
-			window.clearPixels();
 			translateCamera(0, -DELTA, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_q)
 		{
-			window.clearPixels();
 			translateCamera(0, 0, DELTA);
 		}
 		else if (event.key.keysym.sym == SDLK_e)
 		{
-			window.clearPixels();
 			translateCamera(0, 0, -DELTA);
 		}
-		else if (event.key.keysym.sym == SDLK_g)
+		else if (event.key.keysym.sym == SDLK_f)
 		{
-			window.clearPixels();
 			rotateCamera(0, THETA, 0);
-		}
-		else if (event.key.keysym.sym == SDLK_j)
-		{
-			window.clearPixels();
-			rotateCamera(0, -THETA, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_h)
 		{
-			window.clearPixels();
-			rotateCamera(-THETA, 0, 0);
+			rotateCamera(0, -THETA, 0);
 		}
-		else if (event.key.keysym.sym == SDLK_y)
+		else if (event.key.keysym.sym == SDLK_g)
 		{
-			window.clearPixels();
 			rotateCamera(THETA, 0, 0);
 		}
 		else if (event.key.keysym.sym == SDLK_t)
 		{
-			window.clearPixels();
+			rotateCamera(-THETA, 0, 0);
+		}
+		else if (event.key.keysym.sym == SDLK_r)
+		{
 			rotateCamera(0, 0, THETA);
 		}
-		else if (event.key.keysym.sym == SDLK_u)
+		else if (event.key.keysym.sym == SDLK_y)
 		{
-			window.clearPixels();
 			rotateCamera(0, 0, -THETA);
+		}
+		else if (event.key.keysym.sym == SDLK_j)
+		{
+			orbitCamera(vec3(0, 0, -THETA));
 		}
 		else if (event.key.keysym.sym == SDLK_l)
 		{
-			window.clearPixels();
-			lookCamera(vec3(0, 0, 0));
-		}
-		else if (event.key.keysym.sym == SDLK_LEFT)
-		{
-			window.clearPixels();
-			orbitCamera(vec3(0, 0, -THETA));
-		}
-		else if (event.key.keysym.sym == SDLK_RIGHT)
-		{
-			window.clearPixels();
 			orbitCamera(vec3(0, 0, THETA));
 		}
-		else if (event.key.keysym.sym == SDLK_UP)
+		else if (event.key.keysym.sym == SDLK_k)
 		{
-			window.clearPixels();
-			orbitCamera(vec3(0, THETA, 0));
-		}
-		else if (event.key.keysym.sym == SDLK_DOWN)
-		{
-			window.clearPixels();
 			orbitCamera(vec3(0, -THETA, 0));
 		}
-	}
-	else if (event.type == SDL_MOUSEBUTTONDOWN)
-	{
-		// cout << "MOUSE CLICKED" << endl;
+		else if (event.key.keysym.sym == SDLK_i)
+		{
+			orbitCamera(vec3(0, THETA, 0));
+		}
+		else if (event.key.keysym.sym == SDLK_o)
+		{
+			lookCamera(vec3(0, 0, 0));
+		}
 	}
 }
