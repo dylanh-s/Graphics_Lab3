@@ -262,7 +262,7 @@ void drawRaytrace(OBJ obj)
 				// calculate ray for each pixel
 				ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(cameraRotation);
 				ray = glm::normalize(ray);
-				intersection = getClosestIntersection(obj, ray, cameraPosition, 5);
+				intersection = getClosestIntersection(obj, ray, cameraPosition, 3);
 				if (intersection.distanceToCamera < INFINITY)
 				{
 					window.setPixelColour(x, y, -0.5, intersection.colour.pack());

@@ -59,5 +59,11 @@ public:
 					                           sin(z) * cos(y), sin(z) * sin(y) * sin(x) + cos(z) * cos(x), sin(z) * sin(y) * cos(x) - cos(z) * sin(x),
 					                           -sin(y), cos(y) * sin(x), cos(y) * cos(x)} * faces[f[i]].vertices[j];
 	}
+	void scaleOBJ(float x, float y, float z, vector<int> f)
+	{
+		for (uint i = 0; i < f.size(); i++)
+			for (uint j = 0; j < 3; j++)
+				faces[f[i]].vertices[j] = mat3{x, 0, 0, 0, y, 0, 0, 0, z} * faces[f[i]].vertices[j];
+	}
 };
 #endif

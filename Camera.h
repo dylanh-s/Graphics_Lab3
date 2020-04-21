@@ -6,6 +6,7 @@ using namespace std;
 using namespace glm;
 
 void translateCamera(float x, float y, float z);
+void revolveCamera(float x, float y, float z);
 void rotateCamera(float x, float y, float z);
 void lookCamera(vec3 p);
 void orbitCamera(vec3 o);
@@ -13,6 +14,13 @@ void orbitCamera(vec3 o);
 void translateCamera(float x, float y, float z)
 {
 	cameraPosition += vec3(x, y, z);
+}
+
+void revolveCamera(float x, float y, float z)
+{
+	cameraPosition = mat3{cos(z) * cos(y), cos(z) * sin(y) * sin(x) - sin(z) * cos(x), cos(z) * sin(y) * cos(x) + sin(z) * sin(x),
+					      sin(z) * cos(y), sin(z) * sin(y) * sin(x) + cos(z) * cos(x), sin(z) * sin(y) * cos(x) - cos(z) * sin(x),
+					      -sin(y), cos(y) * sin(x), cos(y) * cos(x)} * cameraPosition;
 }
 
 void rotateCamera(float x, float y, float z)
