@@ -1,4 +1,9 @@
-newmtl Black
+newmtl White 
+Ka 0.500000 0.500000 0.500000
+Kd 1.000000 1.000000 1.000000
+Ks 1.000000 1.000000 1.000000
+
+newmtl Black 
 Ka 0.500000 0.500000 0.500000
 Kd 0.000000 0.000000 0.000000
 Ks 1.000000 1.000000 1.000000
@@ -13,62 +18,61 @@ Ka 0.500000 0.500000 0.500000
 Kd 0.000000 1.000000 0.000000
 Ks 1.000000 1.000000 1.000000
 
-newmtl Blue
-Ka 0.500000 0.500000 0.500000
-Kd 0.000000 0.000000 1.000000
-Ks 1.000000 1.000000 1.000000
-
-newmtl Yellow
-Ka 0.500000 0.500000 0.500000
-Kd 1.000000 1.000000 0.000000
-Ks 1.000000 1.000000 1.000000
-
-newmtl Cyan
-Ka 0.500000 0.500000 0.500000
-Kd 0.000000 1.000000 1.000000
-Ks 1.000000 1.000000 1.000000
-
-newmtl Megenta
-Ka 0.500000 0.500000 0.500000
-Kd 1.000000 0.000000 1.000000
-Ks 1.000000 1.000000 1.000000
-
-newmtl White 
-Ka 0.500000 0.500000 0.500000
-Kd 1.000000 1.000000 1.000000
-Ks 1.000000 1.000000 1.000000
-
-newmtl Trippy
+newmtl Logo
 Ka 1.000000 1.000000 1.000000
 Kd 0.660000 0.660000 0.660000
 Ks 0.500000 0.500000 0.500000
 Ns 20.000000
-map_Kd ./inputs/trippy.ppm
-map_Ks ./inputs/trippy.ppm
+map_Kd ./inputs/logo.ppm
+map_Ks ./inputs/logo.ppm
 
-newmtl Stone
+newmtl Wall
 Ka 1.000000 1.000000 1.000000
 Kd 0.660000 0.660000 0.660000
 Ks 0.500000 0.500000 0.500000
 Ns 20.000000
-map_Kd ./inputs/stone.ppm
-map_Ks ./inputs/stone.ppm
+map_Kd ./inputs/wall.ppm
+map_Ks ./inputs/wall.ppm
 
-newmtl Wood
+newmtl Floor
 Ka 1.000000 1.000000 1.000000
 Kd 0.660000 0.660000 0.660000
 Ks 0.500000 0.500000 0.500000
 Ns 20.000000
-map_Kd ./inputs/wood.ppm
-map_Ks ./inputs/wood.ppm
+map_Kd ./inputs/floor.ppm
+map_Ks ./inputs/floor.ppm
 
-newmtl Leopard
+newmtl Tetris1
 Ka 1.000000 1.000000 1.000000
 Kd 0.660000 0.660000 0.660000
 Ks 0.500000 0.500000 0.500000
 Ns 20.000000
-map_Kd ./inputs/leopard.ppm
-map_Ks ./inputs/leopard.ppm
+map_Kd ./inputs/tetris1.ppm
+map_Ks ./inputs/tetris1.ppm
+
+newmtl Tetris2
+Ka 1.000000 1.000000 1.000000
+Kd 0.660000 0.660000 0.660000
+Ks 0.500000 0.500000 0.500000
+Ns 20.000000
+map_Kd ./inputs/tetris2.ppm
+map_Ks ./inputs/tetris2.ppm
+
+newmtl Tetris3
+Ka 1.000000 1.000000 1.000000
+Kd 0.660000 0.660000 0.660000
+Ks 0.500000 0.500000 0.500000
+Ns 20.000000
+map_Kd ./inputs/tetris3.ppm
+map_Ks ./inputs/tetris3.ppm
+
+newmtl Tetris4
+Ka 1.000000 1.000000 1.000000
+Kd 0.660000 0.660000 0.660000
+Ks 0.500000 0.500000 0.500000
+Ns 20.000000
+map_Kd ./inputs/tetris4.ppm
+map_Ks ./inputs/tetris4.ppm
 
 newmtl Mirror
 Ka 1.000000 1.000000 1.000000

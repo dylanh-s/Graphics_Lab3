@@ -15,9 +15,9 @@ int main(int argc, char *argv[])
 	int n = 0;
 	SDL_Event event;
 	vector<int> component;
-	for (int i = 0; i < 3; i++)
+	for (int i = 0; i < 1; i++)
 		{
-			for (int j = 0; j < 52; j++)
+			for (int j = 0; j < 156; j++)
 				component.push_back(j + i * 52);
 			components.push_back(component);
 			component.clear();
@@ -64,12 +64,16 @@ void draw()
 
 void update(int n)
 {
-	cout << "frame " << n << "\n";
+	// cout << "frame " << n << "\n";
 	if (n == 0)
 	{
 		mode = 0;
-		lights.push_back(vec3(0.0, 0.0, 100.0));
+		lights.push_back(vec3(0.0, 0.0, 200.0));
 		obj = objRead("./inputs/logo_4.obj");
+	}
+	else if (n == 1)
+	{
+		ppmWrite(n);
 	}
 }
 
@@ -192,19 +196,23 @@ void handleEvent(SDL_Event event)
 		}
 		else if (event.key.keysym.sym == SDLK_LEFT)
 		{
-			obj.translateOBJ(-DELTA, 0, 0, components[c]);
+			// obj.translateOBJ(-DELTA, 0, 0, components[c]);
+			obj.rotateOBJ(-THETA, 0, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_RIGHT)
 		{
-			obj.translateOBJ(DELTA, 0, 0, components[c]);
+			// obj.translateOBJ(DELTA, 0, 0, components[c]);
+			obj.rotateOBJ(THETA, 0, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_DOWN)
 		{
-			obj.translateOBJ(0, -DELTA, 0, components[c]);
+			// obj.translateOBJ(0, -DELTA, 0, components[c]);
+			obj.rotateOBJ(0, -THETA, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_UP)
 		{
-			obj.translateOBJ(0, DELTA, 0, components[c]);
+			// obj.translateOBJ(0, DELTA, 0, components[c]);
+			obj.rotateOBJ(0, THETA, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_c)
 		{

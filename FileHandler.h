@@ -13,12 +13,12 @@
 using namespace std;
 using namespace glm;
 
-#define WIDTH 250
-#define HEIGHT 250
-#define DEPTH 1000
 #define DELTA 25
 #define THETA 0.1
-#define FOCAL_LENGTH WIDTH / 2
+#define WIDTH 480  //50
+#define HEIGHT 640 //50
+#define DEPTH 1000 //500
+#define FOCAL_LENGTH 600 //WIDTH / 2;
 
 OBJ obj;
 int mode = 0;
