@@ -72,7 +72,7 @@ uint getLightsInShadow(OBJ obj, vector<vec3> lightSources, vec3 point, vec3 ray,
 float getShadowProportion(OBJ obj, vector<vec3> lightSources, vec3 planeNormal, vec3 point, vec3 ray, uint triIndex)
 {
 	uint shadows = 0;
-	float totalShift = 0.1f;
+	float totalShift = 5.0f;
 	vec3 shift = totalShift * normalize(planeNormal);
 	shadows += getLightsInShadow(obj, lights, point, ray, triIndex);
 	shadows += getLightsInShadow(obj, lights, point + shift, ray, triIndex);
@@ -246,9 +246,11 @@ void drawRaytrace(OBJ obj)
 
 #pragma omp parallel
 #pragma omp for
-	for (int x = 0; x <= WIDTH; x++)
+	for (int x = 0; x < WIDTH; x++)
 	{
-		for (int y = 0; y <= HEIGHT; y++)
+		float progress = float(x * HEIGHT) / float(WIDTH * HEIGHT) * 100;
+		cout << progress << "%\n\n";
+		for (int y = 0; y < HEIGHT; y++)
 		{
 			vec3 ray;
 			vector<Colour> colours;
@@ -296,5 +298,6 @@ void drawRaytrace(OBJ obj)
 			
 		}
 	}
+	cout << "100%\n\n";
 }
 #endif

@@ -56,7 +56,8 @@ int main(int argc, char *argv[])
 	// (121 will start at last frame with all the logo visible for testing shadows)
 	for (; n < 121; n++)
 		update(n);
-	while (true)
+	// To chose stopping frame change 121 to any number 1-122
+	while (n < 122)
 	{
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
@@ -102,7 +103,7 @@ void update(int n)
 	cout << "frame " << n << "\n";
 	if (n == 0)
 	{
-		mode = 0;
+		mode = 4;
 		obj = objRead("./inputs/logo_4.obj");
 		lights.push_back(vec3(0.0, 300.0, 800.0));
 		obj.translateOBJ(-50, 600, 0, components[0]);
