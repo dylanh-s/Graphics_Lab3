@@ -52,8 +52,9 @@ int main(int argc, char *argv[])
 	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0,50,0,50,50});
 	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50,0,-50,0,0});
 
-	// To chose starting frame change 0 to any number 0-121
-	for (; n < 0; n++)
+	// To chose starting frame change 121 to any number 0-121 
+	// (121 will start at last frame with all the logo visible for testing shadows)
+	for (; n < 121; n++)
 		update(n);
 	while (true)
 	{
