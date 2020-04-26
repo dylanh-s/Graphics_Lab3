@@ -102,7 +102,7 @@ float getShadowProportion(OBJ obj, vector<vec3> lightSources, vec3 planeNormal, 
 
 vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point, vec3 ray, vec3 Ka, vec3 Kd, vec3 Ks, float spec)
 {
-	vec3 Ip = vec3(20.0f, 20.0f, 20.0f); // point intensity
+	vec3 Ip = vec3(50.0f, 50.0f, 50.0f); // point intensity
 	vec3 Ia = vec3(0.05f, 0.05f, 0.05f); // ambient intensity
 	vec3 I  = vec3(1.00f, 1.00f, 1.00f); // final intensity
 

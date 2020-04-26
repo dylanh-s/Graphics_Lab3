@@ -15,10 +15,10 @@ using namespace glm;
 
 #define DELTA 25
 #define THETA 0.1
-#define WIDTH 480  //50
-#define HEIGHT 640 //50
-#define DEPTH 1000 //500
-#define FOCAL_LENGTH 600 //WIDTH / 2;
+#define WIDTH 480  //250
+#define HEIGHT 640 //250
+#define DEPTH 1150 //500
+#define FOCAL_LENGTH 625 //125;
 
 OBJ obj;
 int mode = 0;

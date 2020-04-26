@@ -28,7 +28,7 @@ private:
 			int W = Ka_ppm->width;
 			int H = Ka_ppm->height;
 			float x = u * (W - 1);
-			float y = v * (H - 1);
+			float y = H - 1 - v * (H - 1);
 			uint32_t uint_col = Ka_ppm->image[y][x];
 			col = intToVec(uint_col);
 			glm::vec3 col_mul = (col / 255.0f) * (Ka / 255.0f);
@@ -49,7 +49,7 @@ private:
 			int W = Kd_ppm->width;
 			int H = Kd_ppm->height;
 			float x = u * (W - 1);
-			float y = v * (H - 1);
+			float y = H - 1 - v * (H - 1);
 			uint32_t uint_col = Kd_ppm->image[y][x];
 			col = intToVec(uint_col);
 			glm::vec3 col_mul = (col / 255.0f) * (Kd / 255.0f);
@@ -70,7 +70,7 @@ private:
 			int W = Ks_ppm->width;
 			int H = Ks_ppm->height;
 			float x = u * (W - 1);
-			float y = v * (H - 1);
+			float y = H - 1 - v * (H - 1);
 			uint32_t uint_col = Ks_ppm->image[y][x];
 			col = intToVec(uint_col);
 			glm::vec3 col_mul = (col / 255.0f) * (Ks / 255.0f);

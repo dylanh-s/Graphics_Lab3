@@ -10,25 +10,55 @@ void handleEvent(SDL_Event event);
 
 int c = 0;
 vector<vector<int>> components;
+vector<vector<int>> xmovements;
+vector<vector<int>> ymovements;
+vector<int> logo;
 int main(int argc, char *argv[])
 {	
 	int n = 0;
 	SDL_Event event;
 	vector<int> component;
-	for (int i = 0; i < 1; i++)
+	for (int i = 0; i < 3; i++)
 		{
-			for (int j = 0; j < 156; j++)
+			for (int j = 0; j < 12; j++)
+				component.push_back(j + i * 52);
+			components.push_back(component);
+			component.clear();
+			for (int j = 12; j < 24; j++)
+				component.push_back(j + i * 52);
+			components.push_back(component);
+			component.clear();
+			for (int j = 24; j < 52; j++)
 				component.push_back(j + i * 52);
 			components.push_back(component);
 			component.clear();
 		}
-	while (true)
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,50,0,0,0,0});
+	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,0,-50,-50,-50,-50});
+	xmovements.push_back(vector<int> {0,0,0,-50,0,0,0,-50,0,0});
+	ymovements.push_back(vector<int> {-50,-50,-50,0,-50,-50,-50,0,-50,-50,});
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0});
+	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50});
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,50,0,0,0,0,0});
+	ymovements.push_back(vector<int> {-50,-50,-50,-50,-50,-50,-50,0,-50,-50,-50,-50,-50});
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0,0,0,0,0,-50,0,-50});
+	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,0,-50,0});
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0,0,0,0,0,0});
+	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50});
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0,0,0,50,0,50,50});
+	ymovements.push_back(vector<int> {-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,0,-50,0,0});
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0,0,50,0,50});
+	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,0,-50,0});
+	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0,50,0,50,50});
+	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50,0,-50,0,0});
+	while (n < 121)
 	{
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
 		update(n);
 		draw();
 		window.renderFrame();
+		ppmWrite(n);
 		n++;
 	}
 }
@@ -64,17 +94,95 @@ void draw()
 
 void update(int n)
 {
-	// cout << "frame " << n << "\n";
+	cout << "frame " << n << "\n";
 	if (n == 0)
 	{
-		mode = 0;
-		lights.push_back(vec3(0.0, 0.0, 200.0));
+		mode = 3;
 		obj = objRead("./inputs/logo_4.obj");
+		lights.push_back(vec3(0.0, 300.0, 800.0));
+		obj.translateOBJ(-50, 600, 0, components[0]);
+		obj.translateOBJ(100, 450, 0, components[1]);
+		obj.translateOBJ(0, 600, 0, components[2]);
+		obj.translateOBJ(-50, 650, 0, components[3]);
+		obj.translateOBJ(100, 850, 0, components[4]);
+		obj.translateOBJ(0, 850, 0, components[5]);
+		obj.translateOBJ(-150, 700, 0, components[6]);
+		obj.translateOBJ(-100, 700, 0, components[7]);
+		obj.translateOBJ(-150, 650, 0, components[8]);
 	}
-	else if (n == 1)
+	else if (n < 16)
 	{
-		ppmWrite(n);
+		obj.translateOBJ(xmovements[5][n - 1], ymovements[5][n - 1], 0, components[5]);
 	}
+	else if (n < 33)
+	{
+		obj.translateOBJ(xmovements[4][n - 16], ymovements[4][n - 16], 0, components[4]);
+	}
+	else if (n < 46)
+	{
+		obj.translateOBJ(xmovements[3][n - 33], ymovements[3][n - 33], 0, components[3]);
+	}
+	else if (n < 56)
+	{
+		obj.translateOBJ(xmovements[2][n - 46], ymovements[2][n - 46], 0, components[2]);
+	}
+	else if (n < 67)
+	{
+		obj.translateOBJ(xmovements[0][n - 56], ymovements[0][n - 56], 0, components[0]);
+	}
+	else if (n < 77)
+	{
+		obj.translateOBJ(xmovements[1][n - 67], ymovements[1][n - 67], 0, components[1]);
+	}
+	else if (n < 93)
+	{
+		obj.translateOBJ(xmovements[6][n - 77], ymovements[6][n - 77], 0, components[6]);
+	}
+	else if (n < 107)
+	{
+		obj.translateOBJ(xmovements[8][n - 93], ymovements[8][n - 93], 0, components[8]);
+	}
+	else if (n < 121)
+	{
+		obj.translateOBJ(xmovements[7][n - 107], ymovements[7][n - 107], 0, components[7]);
+	}
+
+	// else if (n % 20 == 0 && n < 320)
+	// {
+	// 	obj.translateOBJ(xmovements[5][n / 20 - 1], ymovements[5][n / 20 - 1], 0, components[5]);
+	// }
+	// else if (n % 20 == 0 && n >= 320 && n < 660)
+	// {
+	// 	obj.translateOBJ(xmovements[4][n / 20 - 16], ymovements[4][n / 20 - 16], 0, components[4]);
+	// }
+	// else if (n % 20 == 0 && n >= 660 && n < 920)
+	// {
+	// 	obj.translateOBJ(xmovements[3][n / 20 - 33], ymovements[3][n / 20 - 33], 0, components[3]);
+	// }
+	// else if (n % 20 == 0 && n >= 920 && n < 1120)
+	// {
+	// 	obj.translateOBJ(xmovements[2][n / 20 - 46], ymovements[2][n / 20 - 46], 0, components[2]);
+	// }
+	// else if (n % 20 == 0 && n >= 1120 && n < 1340)
+	// {
+	// 	obj.translateOBJ(xmovements[0][n / 20 - 56], ymovements[0][n / 20 - 56], 0, components[0]);
+	// }
+	// else if (n % 20 == 0 && n >= 1340 && n < 1540)
+	// {
+	// 	obj.translateOBJ(xmovements[1][n / 20 - 67], ymovements[1][n / 20 - 67], 0, components[1]);
+	// }
+	// else if (n % 20 == 0 && n >= 1540 && n < 1860)
+	// {
+	// 	obj.translateOBJ(xmovements[6][n / 20 - 77], ymovements[6][n / 20 - 77], 0, components[6]);
+	// }
+	// else if (n % 20 == 0 && n >= 1860 && n < 2140)
+	// {
+	// 	obj.translateOBJ(xmovements[8][n / 20 - 93], ymovements[8][n / 20 - 93], 0, components[8]);
+	// }
+	// else if (n % 20 == 0 && n >= 2140 && n < 2420)
+	// {
+	// 	obj.translateOBJ(xmovements[7][n / 20 - 107], ymovements[7][n / 20 - 107], 0, components[7]);
+	// }
 }
 
 void handleEvent(SDL_Event event)
@@ -161,30 +269,6 @@ void handleEvent(SDL_Event event)
 		{
 			orbitCamera(vec3(DELTA, 0, 0));
 		}
-		else if (event.key.keysym.sym == SDLK_SEMICOLON)
-		{
-			revolveCamera(0, -THETA, 0);
-		}
-		else if (event.key.keysym.sym == SDLK_HASH)
-		{
-			revolveCamera(0, THETA, 0);
-		}
-		else if (event.key.keysym.sym == SDLK_QUOTE)
-		{
-			revolveCamera(-THETA, 0, 0);
-		}
-		else if (event.key.keysym.sym == SDLK_LEFTBRACKET)
-		{
-			revolveCamera(THETA, 0, 0);
-		}
-		else if (event.key.keysym.sym == SDLK_p)
-		{
-			revolveCamera(0, 0, -THETA);
-		}
-		else if (event.key.keysym.sym == SDLK_RIGHTBRACKET)
-		{
-			revolveCamera(0, 0, THETA);
-		}
 		else if (event.key.keysym.sym == SDLK_x)
 		{
 			lookCamera(vec3(0, 0, 0));
@@ -196,27 +280,23 @@ void handleEvent(SDL_Event event)
 		}
 		else if (event.key.keysym.sym == SDLK_LEFT)
 		{
-			// obj.translateOBJ(-DELTA, 0, 0, components[c]);
-			obj.rotateOBJ(-THETA, 0, 0, components[c]);
+			obj.translateOBJ(-50, 0, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_RIGHT)
 		{
-			// obj.translateOBJ(DELTA, 0, 0, components[c]);
-			obj.rotateOBJ(THETA, 0, 0, components[c]);
+			obj.translateOBJ(50, 0, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_DOWN)
 		{
-			// obj.translateOBJ(0, -DELTA, 0, components[c]);
-			obj.rotateOBJ(0, -THETA, 0, components[c]);
+			obj.translateOBJ(0, -50, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_UP)
 		{
-			// obj.translateOBJ(0, DELTA, 0, components[c]);
-			obj.rotateOBJ(0, THETA, 0, components[c]);
+			obj.translateOBJ(0, 50, 0, components[c]);
 		}
 		else if (event.key.keysym.sym == SDLK_c)
 		{
-			c = (c + 1) % 3;
+			c = (c + 1) % 9;
 		}
 	}
 }

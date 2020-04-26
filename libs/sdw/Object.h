@@ -15,7 +15,7 @@ class OBJ
 public:
 	OBJ()
 	{
-		ppms.reserve(10);
+		ppms.reserve(20);
 	}
 	std::vector<ModelTriangle> faces;
 	std::vector<TextureTriangle> textureTris;
