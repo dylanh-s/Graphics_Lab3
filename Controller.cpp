@@ -97,7 +97,7 @@ void update(int n)
 	cout << "frame " << n << "\n";
 	if (n == 0)
 	{
-		mode = 3;
+		mode = 4;
 		obj = objRead("./inputs/logo_4.obj");
 		lights.push_back(vec3(0.0, 300.0, 800.0));
 		obj.translateOBJ(-50, 600, 0, components[0]);
