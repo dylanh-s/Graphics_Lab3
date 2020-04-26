@@ -12,12 +12,12 @@ int c = 0;
 vector<vector<int>> components;
 vector<vector<int>> xmovements;
 vector<vector<int>> ymovements;
-vector<int> logo;
 int main(int argc, char *argv[])
 {	
 	int n = 0;
 	SDL_Event event;
 	vector<int> component;
+	// This creates index array of the different logo pieces
 	for (int i = 0; i < 3; i++)
 		{
 			for (int j = 0; j < 12; j++)
@@ -51,7 +51,11 @@ int main(int argc, char *argv[])
 	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50,-50,0,-50,0});
 	xmovements.push_back(vector<int> {0,0,0,0,0,0,0,0,0,0,50,0,50,50});
 	ymovements.push_back(vector<int> {-100,-50,-50,-50,-50,-50,-50,-50,-50,-50,0,-50,0,0});
-	while (n < 121)
+
+	// To chose starting frame change 0 to any number 0-121
+	for (; n < 0; n++)
+		update(n);
+	while (true)
 	{
 		if (window.pollForInputEvents(&event))
 			handleEvent(event);
@@ -97,7 +101,7 @@ void update(int n)
 	cout << "frame " << n << "\n";
 	if (n == 0)
 	{
-		mode = 4;
+		mode = 0;
 		obj = objRead("./inputs/logo_4.obj");
 		lights.push_back(vec3(0.0, 300.0, 800.0));
 		obj.translateOBJ(-50, 600, 0, components[0]);
@@ -146,43 +150,6 @@ void update(int n)
 	{
 		obj.translateOBJ(xmovements[7][n - 107], ymovements[7][n - 107], 0, components[7]);
 	}
-
-	// else if (n % 20 == 0 && n < 320)
-	// {
-	// 	obj.translateOBJ(xmovements[5][n / 20 - 1], ymovements[5][n / 20 - 1], 0, components[5]);
-	// }
-	// else if (n % 20 == 0 && n >= 320 && n < 660)
-	// {
-	// 	obj.translateOBJ(xmovements[4][n / 20 - 16], ymovements[4][n / 20 - 16], 0, components[4]);
-	// }
-	// else if (n % 20 == 0 && n >= 660 && n < 920)
-	// {
-	// 	obj.translateOBJ(xmovements[3][n / 20 - 33], ymovements[3][n / 20 - 33], 0, components[3]);
-	// }
-	// else if (n % 20 == 0 && n >= 920 && n < 1120)
-	// {
-	// 	obj.translateOBJ(xmovements[2][n / 20 - 46], ymovements[2][n / 20 - 46], 0, components[2]);
-	// }
-	// else if (n % 20 == 0 && n >= 1120 && n < 1340)
-	// {
-	// 	obj.translateOBJ(xmovements[0][n / 20 - 56], ymovements[0][n / 20 - 56], 0, components[0]);
-	// }
-	// else if (n % 20 == 0 && n >= 1340 && n < 1540)
-	// {
-	// 	obj.translateOBJ(xmovements[1][n / 20 - 67], ymovements[1][n / 20 - 67], 0, components[1]);
-	// }
-	// else if (n % 20 == 0 && n >= 1540 && n < 1860)
-	// {
-	// 	obj.translateOBJ(xmovements[6][n / 20 - 77], ymovements[6][n / 20 - 77], 0, components[6]);
-	// }
-	// else if (n % 20 == 0 && n >= 1860 && n < 2140)
-	// {
-	// 	obj.translateOBJ(xmovements[8][n / 20 - 93], ymovements[8][n / 20 - 93], 0, components[8]);
-	// }
-	// else if (n % 20 == 0 && n >= 2140 && n < 2420)
-	// {
-	// 	obj.translateOBJ(xmovements[7][n / 20 - 107], ymovements[7][n / 20 - 107], 0, components[7]);
-	// }
 }
 
 void handleEvent(SDL_Event event)
