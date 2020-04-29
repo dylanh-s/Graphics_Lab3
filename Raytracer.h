@@ -36,7 +36,7 @@ uint getLightsInShadow(OBJ obj, vector<vec3> lightSources, vec3 point, vec3 ray,
 	{
 		vec3 shadowRay = lightSources.at(l) - point;
 		float distanceToLight = length(shadowRay);
-		
+
 		bool inShadow = 0;
 		for (uint c = 0; c < obj.faces.size(); c++)
 		{
@@ -51,7 +51,7 @@ uint getLightsInShadow(OBJ obj, vector<vec3> lightSources, vec3 point, vec3 ray,
 			float t = possibleSolution.x;
 			float u = possibleSolution.y;
 			float v = possibleSolution.z;
-			
+
 			if (0.0 <= u && u <= 1.0 && 0.0 <= v && v <= 1.0 && (u + v) <= 1.0 && t > 0.4f && c != triIndex)
 			{
 				if (t < (distanceToLight) && (abs(t - distanceToLight) > 0.01f))
@@ -83,11 +83,11 @@ float getShadowProportion(OBJ obj, vector<vec3> lightSources, vec3 planeNormal, 
 	{
 		shadeProportion = 1.0f;
 	}
-	else if (shadows == 0)                    // no levels in shade
+	else if (shadows == 0) // no levels in shade
 	{
 		shadeProportion = 0.0f;
 	}
-	else                                      // some levels in shade
+	else // some levels in shade
 	{
 		float shift = -1.0f * totalShift;
 		while (shadows >= 1)
@@ -104,7 +104,7 @@ vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point, v
 {
 	vec3 Ip = vec3(60.0f, 60.0f, 60.0f); // point intensity
 	vec3 Ia = vec3(0.05f, 0.05f, 0.05f); // ambient intensity
-	vec3 I  = vec3(1.00f, 1.00f, 1.00f); // final intensity
+	vec3 I = vec3(1.00f, 1.00f, 1.00f);	 // final intensity
 
 	for (uint l = 0; l < lightSources.size(); l++)
 	{
@@ -133,7 +133,7 @@ vec3 getColourOfPoint(vector<vec3> lightSources, vec3 planeNormal, vec3 point, v
 		{
 			phong = vec3(0.0f, 0.0f, 0.0f);
 		}
-		else                          // reflection
+		else // reflection
 		{
 			phong = lightDropOff * Ip * Ks * pow(reflectionDotView, spec);
 		}
@@ -182,17 +182,19 @@ Intersection getClosestIntersection(OBJ obj, vec3 ray, vec3 point, int rayBounce
 			{
 				vec3 u_tri = u * (tri.vertices[1] - tri.vertices[0]);
 				vec3 v_tri = v * (tri.vertices[2] - tri.vertices[0]);
-				
+
 				vec3 point = (u_tri + v_tri) + tri.vertices[0];
 				vec3 planeNorm = cross(eu, ev);
-
+				// back face culling
+				// if (dot(ray, planeNorm) < 0)
+				// {
 				vec3 Ka;
 				tri.mtl.getKa(u, v, obj.textureTris[c], Ka);
 				vec3 Kd;
 				tri.mtl.getKd(u, v, obj.textureTris[c], Kd);
 				vec3 Ks;
 				tri.mtl.getKs(u, v, obj.textureTris[c], Ks);
-				
+
 				float spec = tri.mtl.specularity;
 				float brightness = 1.0;
 				Colour pixelCol;
@@ -213,7 +215,7 @@ Intersection getClosestIntersection(OBJ obj, vec3 ray, vec3 point, int rayBounce
 				{
 					vec3 col = getColourOfPoint(lights, planeNorm, point, ray, Ka, Kd, Ks, spec);
 					pixelCol = Colour(col.x, col.y, col.z, 1.0f);
-					if (mode == 3)      // hard shadows
+					if (mode == 3) // hard shadows
 					{
 						uint shadows = getLightsInShadow(obj, lights, point, ray, c);
 						if (shadows == lights.size())
@@ -229,6 +231,7 @@ Intersection getClosestIntersection(OBJ obj, vec3 ray, vec3 point, int rayBounce
 					}
 				}
 				closest = Intersection(point, t, tri, pixelCol);
+				// }
 			}
 		}
 	}
@@ -238,11 +241,11 @@ Intersection getClosestIntersection(OBJ obj, vec3 ray, vec3 point, int rayBounce
 void drawRaytrace(OBJ obj)
 {
 	vector<vec2> aliasPattern;
-	aliasPattern.push_back(vec2(0.0f, 0.0f)); 	// float foo = 10.0f;
-	aliasPattern.push_back(vec2(0.5f, 0.0f)); 	// aliasPattern.push_back(vec2(2.0f / foo, 2.0f / foo));
-	aliasPattern.push_back(vec2(-0.5f, 0.0f));  // aliasPattern.push_back(vec2(7.0f / foo, 1.0f / foo));
-	aliasPattern.push_back(vec2(0.0f, 0.5f)); 	// aliasPattern.push_back(vec2(3.0f / foo, 7.0f / foo));
-	aliasPattern.push_back(vec2(0.0f, -0.5f));  // aliasPattern.push_back(vec2(8.0f / foo, 6.0f / foo));
+	aliasPattern.push_back(vec2(0.0f, 0.0f));  // float foo = 10.0f;
+	aliasPattern.push_back(vec2(0.5f, 0.0f));  // aliasPattern.push_back(vec2(2.0f / foo, 2.0f / foo));
+	aliasPattern.push_back(vec2(-0.5f, 0.0f)); // aliasPattern.push_back(vec2(7.0f / foo, 1.0f / foo));
+	aliasPattern.push_back(vec2(0.0f, 0.5f));  // aliasPattern.push_back(vec2(3.0f / foo, 7.0f / foo));
+	aliasPattern.push_back(vec2(0.0f, -0.5f)); // aliasPattern.push_back(vec2(8.0f / foo, 6.0f / foo));
 
 #pragma omp parallel
 #pragma omp for
@@ -259,7 +262,7 @@ void drawRaytrace(OBJ obj)
 			float xp = -(x - w);
 			float yp = (y - h);
 
-			if (mode != 5 ) // without anti-aliasing
+			if (mode != 5) // without anti-aliasing
 			{
 				// calculate ray for each pixel
 				ray = vec3(xp, yp, FOCAL_LENGTH) * glm::inverse(cameraRotation);
@@ -270,7 +273,7 @@ void drawRaytrace(OBJ obj)
 					window.setPixelColour(x, y, -0.5, intersection.colour.pack());
 				}
 			}
-			else            // with anti-aliasing 
+			else // with anti-aliasing
 			{
 				for (uint a = 0; a < aliasPattern.size(); a++)
 				{
@@ -295,7 +298,6 @@ void drawRaytrace(OBJ obj)
 					window.setPixelColour(x, y, -0.5, avgCol.pack());
 				}
 			}
-			
 		}
 	}
 	cout << "100%\n\n";
